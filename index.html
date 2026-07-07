@@ -11,6 +11,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+  <!-- Supabase y Capa de Datos -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="db.js"></script>
+
   <style>
     /* VARIABLES DEL SISTEMA EDITORIAL CLEAN */
     :root {
@@ -418,16 +423,37 @@
       color: var(--text-muted);
       font-size: 0.8rem;
       background: #fafafa;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
     }
 
     footer p {
       margin-bottom: 0.25rem;
     }
+
+    footer a {
+      color: var(--accent-red);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* MENSAJE DE ERROR/CARGA */
+    .loading-state {
+      text-align: center;
+      padding: 4rem 1rem;
+      font-size: 1.15rem;
+      color: var(--text-muted);
+    }
   </style>
 </head>
 <body>
 
-  <div class="container">
+  <div class="container" id="main-container">
     
     <!-- METADATOS EDITORIALES -->
     <div class="editorial-meta">
@@ -438,32 +464,32 @@
       <span class="live-tag">ACTUALIZADO EN VIVO</span>
     </div>
 
-    <!-- ENCABEZADO -->
+    <!-- ENCABEZADO DINÁMICO -->
     <header>
-      <h1 class="main-headline">¿Cómo jugó la Selección?</h1>
-      <p class="subtitle-editorial">Calificá el rendimiento de los futbolistas argentinos en la gran victoria 3-2 sobre Egipto por la fase de grupos y compará tus puntajes con el promedio general de los lectores.</p>
+      <h1 class="main-headline" id="match-title">Cargando partido...</h1>
+      <p class="subtitle-editorial" id="match-summary"></p>
     </header>
 
-    <!-- FOTO PRINCIPAL HERO -->
-    <div class="main-hero-image">
-      <img src="images/messi.png" alt="Lionel Messi celebrando en el partido">
-      <span class="image-caption">El capitán argentino comandó el triunfo del seleccionado nacional ante Egipto. Foto: Prensa / IA Mockup</span>
+    <!-- FOTO PRINCIPAL HERO DINÁMICA -->
+    <div class="main-hero-image" id="match-hero-container" style="display: none;">
+      <img id="match-hero-img" src="" alt="Imagen destacada del partido">
+      <span class="image-caption" id="match-hero-caption">Foto de Prensa / IA Mockup</span>
     </div>
 
     <!-- PANEL GENERAL DE CONTROL -->
-    <div class="controls">
+    <div class="controls" id="match-controls" style="display: none;">
       <div class="stats-summary">
         <div class="stat-box">
           <span class="stat-label">Tus Calificaciones</span>
-          <span class="stat-value" id="user-voted-count">0 / 5</span>
+          <span class="stat-value" id="user-voted-count">0 / 0</span>
         </div>
         <div class="stat-box">
           <span class="stat-label">Promedio de la Gente</span>
-          <span class="stat-value red-accent" id="team-community-avg">7.8</span>
+          <span class="stat-value red-accent" id="team-community-avg">0.0</span>
         </div>
         <div class="stat-box">
           <span class="stat-label">Total de Hinchas</span>
-          <span class="stat-value" id="total-voters-display">1.482</span>
+          <span class="stat-value" id="total-voters-display">0</span>
         </div>
       </div>
       <button class="btn" id="reset-button" disabled>
@@ -474,9 +500,9 @@
       </button>
     </div>
 
-    <!-- LISTADO DE JUGADORES -->
+    <!-- LISTADO DE JUGADORES DINÁMICO -->
     <main class="players-list" id="players-container">
-      <!-- Los jugadores se generan mediante JavaScript -->
+      <div class="loading-state">Cargando el listado de jugadores...</div>
     </main>
 
   </div>
@@ -484,85 +510,167 @@
   <!-- PIE DE PÁGINA -->
   <footer>
     <p>© 2026 | Diseño Editorial Mockup</p>
+    <a href="admin.html">Ir al Panel de Administración</a>
   </footer>
 
   <script>
-    // DATOS DE LOS JUGADORES
-    const playersData = [
-      {
-        id: "messi",
-        name: "Lionel Messi",
-        number: 10,
-        position: "Delantero / Capitán",
-        image: "images/messi.png",
-        initialAvg: 8.7
-      },
-      {
-        id: "dibu",
-        name: "Emiliano Martínez",
-        number: 23,
-        position: "Arquero",
-        image: "images/dibu.png",
-        initialAvg: 8.2
-      },
-      {
-        id: "depaul",
-        name: "Rodrigo De Paul",
-        number: 7,
-        position: "Mediocampista",
-        image: "images/depaul.png",
-        initialAvg: 6.9
-      },
-      {
-        id: "lautaro",
-        name: "Lautaro Martínez",
-        number: 22,
-        position: "Delantero",
-        image: "images/lautaro.png",
-        initialAvg: 7.8
-      },
-      {
-        id: "romero",
-        name: "Cristian Romero",
-        number: 13,
-        position: "Defensor Central",
-        image: "images/romero.png",
-        initialAvg: 7.4
-      }
-    ];
-
-    // CONFIGURACIÓN LOCAL
-    const BASE_VOTERS = 1482; // Votos base simulados
-    let userVotes = JSON.parse(localStorage.getItem('user_votes_arg_egy')) || {};
+    let currentMatchId = null;
+    let playersList = [];
+    let userVotes = {};
+    let playerStats = {};
 
     // INICIALIZACIÓN
-    document.addEventListener("DOMContentLoaded", () => {
-      renderPlayers();
-      updateGlobalStatus();
-      
-      // Configuración del botón de reiniciar
-      const resetBtn = document.getElementById("reset-button");
-      resetBtn.addEventListener("click", () => {
-        userVotes = {};
-        localStorage.removeItem('user_votes_arg_egy');
-        renderPlayers();
-        updateGlobalStatus();
-      });
+    document.addEventListener("DOMContentLoaded", async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      currentMatchId = urlParams.get('match');
+
+      try {
+        // 1. Si no hay ID en la URL, semillar partido por defecto o buscar el último
+        if (!currentMatchId) {
+          const seededId = await handleNoMatchParam();
+          if (seededId) {
+            // Recargar con el ID correcto
+            window.location.search = `?match=${seededId}`;
+            return;
+          }
+        }
+
+        // 2. Cargar datos del partido
+        await loadMatchData(currentMatchId);
+
+        // 3. Configurar botón de reinicio
+        const resetBtn = document.getElementById("reset-button");
+        resetBtn.addEventListener("click", async () => {
+          if (confirm("¿Estás seguro de que quieres borrar todos tus votos para este partido?")) {
+            for (const p of playersList) {
+              // Limpiar votos locales (en mock es directo, en Supabase se borran de la base de datos)
+              if (!window.isSupabaseConfigured) {
+                const votes = JSON.parse(localStorage.getItem('mock_votes')) || [];
+                const userUuid = getOrCreateUserUUID();
+                const filtered = votes.filter(v => !(v.player_id === p.id && v.user_uuid === userUuid));
+                localStorage.setItem('mock_votes', JSON.stringify(filtered));
+              } else {
+                // Para Supabase, eliminamos el registro en votes de este usuario y jugador
+                const userUuid = getOrCreateUserUUID();
+                await window.supabaseClient.from('votes').delete().eq('player_id', p.id).eq('user_uuid', userUuid);
+              }
+            }
+            // Recargar interfaz
+            userVotes = {};
+            await refreshStats();
+            renderPlayers();
+            updateGlobalStatus();
+          }
+        });
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById("players-container").innerHTML = `
+          <div class="loading-state" style="color: var(--accent-red);">
+            Error al cargar el partido. Asegúrate de haber ejecutado los scripts de base de datos o revisa la consola.<br>
+            <a href="admin.html" class="btn" style="margin-top: 1.5rem; display: inline-flex;">Cargar un partido nuevo</a>
+          </div>
+        `;
+      }
     });
 
-    // RENDERIZADO DE JUGADORES
+    // Semillar partido inicial si la base de datos o localStorage está vacía
+    async function handleNoMatchParam() {
+      if (window.isSupabaseConfigured) {
+        // Buscar el último partido en Supabase
+        const { data, error } = await window.supabaseClient
+          .from('matches')
+          .select('id')
+          .order('created_at', { ascending: false })
+          .limit(1);
+        
+        if (data && data.length > 0) {
+          return data[0].id;
+        } else {
+          // Base de datos de Supabase vacía: sembrar partido semilla
+          return await seedDefaultMatch();
+        }
+      } else {
+        // En Local Storage
+        const matches = JSON.parse(localStorage.getItem('mock_matches')) || [];
+        if (matches.length > 0) {
+          return matches[matches.length - 1].id; // Retorna el último
+        } else {
+          return await seedDefaultMatch();
+        }
+      }
+    }
+
+    // Semilla del partido clásico Argentina vs Egipto
+    async function seedDefaultMatch() {
+      const matchId = await DB.createMatch(
+        "¿Cómo jugó la Selección?",
+        "Calificá el rendimiento de los futbolistas argentinos en la gran victoria 3-2 sobre Egipto por la fase de grupos y compará tus puntajes con el promedio general de los lectores.",
+        "images/messi.png"
+      );
+
+      const players = [
+        { name: "Lionel Messi", number: 10, position: "Delantero / Capitán", imageUrl: "images/messi.png", initialAvg: 8.7 },
+        { name: "Emiliano Martínez", number: 23, position: "Arquero", imageUrl: "images/dibu.png", initialAvg: 8.2 },
+        { name: "Rodrigo De Paul", number: 7, position: "Mediocampista", imageUrl: "images/depaul.png", initialAvg: 6.9 },
+        { name: "Lautaro Martínez", number: 22, position: "Delantero", imageUrl: "images/lautaro.png", initialAvg: 7.8 },
+        { name: "Cristian Romero", number: 13, position: "Defensor Central", imageUrl: "images/romero.png", initialAvg: 7.4 }
+      ];
+
+      await DB.addPlayers(matchId, players);
+      return matchId;
+    }
+
+    // CARGAR DATOS GENERALES
+    async function loadMatchData(matchId) {
+      // 1. Obtener detalles del partido
+      const match = await DB.getMatch(matchId);
+      document.getElementById("match-title").innerText = match.title;
+      document.getElementById("match-summary").innerText = match.summary;
+      
+      if (match.hero_image_url) {
+        const heroImg = document.getElementById("match-hero-img");
+        heroImg.src = match.hero_image_url;
+        document.getElementById("match-hero-container").style.display = "block";
+      }
+
+      // 2. Obtener lista de jugadores
+      playersList = await DB.getPlayers(matchId);
+
+      // 3. Obtener promedios y total de votantes
+      await refreshStats();
+
+      // 4. Obtener votos del usuario
+      userVotes = await DB.getUserVotes(matchId);
+
+      // 5. Renderizar e indicar que finalizó la carga
+      renderPlayers();
+      updateGlobalStatus();
+      document.getElementById("match-controls").style.display = "flex";
+    }
+
+    // REFRESCO DE ESTADÍSTICAS DESDE DB/LOCALSTORAGE
+    async function refreshStats() {
+      playerStats = await DB.getPlayerStats(currentMatchId);
+    }
+
+    // RENDERIZADO DE LA GRILLA DE JUGADORES
     function renderPlayers() {
       const container = document.getElementById("players-container");
       container.innerHTML = "";
 
-      playersData.forEach(player => {
+      if (playersList.length === 0) {
+        container.innerHTML = `<div class="loading-state">Este partido aún no tiene jugadores cargados.</div>`;
+        return;
+      }
+
+      playersList.forEach(player => {
         const userVote = userVotes[player.id];
         const hasVoted = userVote !== undefined;
 
-        // Calcular el promedio simulado agregando el voto del usuario si existe
-        const calculatedAvg = hasVoted
-          ? (((player.initialAvg * BASE_VOTERS) + userVote) / (BASE_VOTERS + 1)).toFixed(1)
-          : player.initialAvg.toFixed(1);
+        // Recuperar promedios reales calculados
+        const stats = playerStats[player.id] || { averageRating: player.initial_avg, totalVotes: 0 };
+        const calculatedAvg = stats.averageRating.toFixed(1);
 
         const row = document.createElement("article");
         row.className = `player-row ${hasVoted ? 'has-voted' : ''}`;
@@ -571,7 +679,7 @@
         row.innerHTML = `
           <div class="player-header">
             <div class="player-avatar-container">
-              <img class="player-avatar" src="${player.image}" alt="Foto de ${player.name}">
+              <img class="player-avatar" src="${player.image_url}" alt="Foto de ${player.name}" onerror="this.src='https://via.placeholder.com/150'">
             </div>
             <div class="player-meta">
               <span class="player-number-role">N°${player.number} • ${player.position}</span>
@@ -616,71 +724,83 @@
     }
 
     // REGISTRO DE VOTO INDIVIDUAL
-    window.registerVote = function (playerId, voteValue) {
-      // Registrar en el estado e interfaz
-      userVotes[playerId] = voteValue;
-      localStorage.setItem('user_votes_arg_egy', JSON.stringify(userVotes));
+    window.registerVote = async function (playerId, voteValue) {
+      try {
+        // Enviar voto a la base de datos o localstorage
+        await DB.submitVote(playerId, voteValue);
+        userVotes[playerId] = voteValue;
 
-      // Encontrar los datos estáticos del jugador
-      const player = playersData.find(p => p.id === playerId);
-      
-      // Calcular promedio nuevo
-      const calculatedAvg = (((player.initialAvg * BASE_VOTERS) + voteValue) / (BASE_VOTERS + 1)).toFixed(1);
+        // Refrescar y recalcular estadísticas
+        await refreshStats();
+        
+        const stats = playerStats[playerId] || { averageRating: voteValue, totalVotes: 1 };
+        const calculatedAvg = stats.averageRating.toFixed(1);
 
-      // Actualizar fila del jugador
-      const row = document.getElementById(`row-${playerId}`);
-      row.classList.add('has-voted');
+        // Actualizar fila del jugador en caliente
+        const row = document.getElementById(`row-${playerId}`);
+        row.classList.add('has-voted');
 
-      // Actualizar botones de puntaje
-      const buttons = row.querySelectorAll('.score-btn');
-      buttons.forEach((btn, index) => {
-        if (index + 1 === voteValue) {
-          btn.classList.add('selected');
-        } else {
-          btn.classList.remove('selected');
-        }
-      });
+        // Actualizar botones de puntaje
+        const buttons = row.querySelectorAll('.score-btn');
+        buttons.forEach((btn, index) => {
+          if (index + 1 === voteValue) {
+            btn.classList.add('selected');
+          } else {
+            btn.classList.remove('selected');
+          }
+        });
 
-      // Actualizar etiquetas y badges
-      document.getElementById(`voted-dot-${playerId}`).style.display = 'inline-block';
-      document.getElementById(`val-user-${playerId}`).innerText = voteValue;
-      document.getElementById(`val-comm-${playerId}`).innerText = calculatedAvg;
+        // Actualizar etiquetas y barras comparativas
+        document.getElementById(`voted-dot-${playerId}`).style.display = 'inline-block';
+        document.getElementById(`val-user-${playerId}`).innerText = voteValue;
+        document.getElementById(`val-comm-${playerId}`).innerText = calculatedAvg;
 
-      // Animar barras
-      setTimeout(() => {
-        document.getElementById(`bar-user-${playerId}`).style.width = `${voteValue * 10}%`;
-        document.getElementById(`bar-comm-${playerId}`).style.width = `${calculatedAvg * 10}%`;
-      }, 50);
+        // Animar barras
+        setTimeout(() => {
+          document.getElementById(`bar-user-${playerId}`).style.width = `${voteValue * 10}%`;
+          document.getElementById(`bar-comm-${playerId}`).style.width = `${calculatedAvg * 10}%`;
+        }, 50);
 
-      // Actualizar conteos globales
-      updateGlobalStatus();
+        // Actualizar conteos globales
+        updateGlobalStatus();
+
+      } catch (err) {
+        console.error(err);
+        alert("Ocurrió un error al procesar tu voto: " + err.message);
+      }
     };
 
-    // ACTUALIZAR MÁS INFORMACIÓN A NIVEL GLOBAL
+    // ACTUALIZAR ESTADÍSTICAS GLOBALES
     function updateGlobalStatus() {
       const votedKeys = Object.keys(userVotes);
       const votedCount = votedKeys.length;
 
       // Actualizar contadores
-      document.getElementById("user-voted-count").innerText = `${votedCount} / 5`;
+      document.getElementById("user-voted-count").innerText = `${votedCount} / ${playersList.length}`;
       document.getElementById("reset-button").disabled = votedCount === 0;
 
-      // Incrementar el total de votantes si el usuario votó al menos uno
-      const totalVoters = votedCount > 0 ? BASE_VOTERS + 1 : BASE_VOTERS;
-      document.getElementById("total-voters-display").innerText = totalVoters.toLocaleString('es-AR');
-
-      // Calcular el promedio general de todo el equipo según las calificaciones de la comunidad
+      // Obtener el total acumulado de votantes únicos (aproximado usando el máximo totalVotes de cualquiera de los jugadores)
+      let maxVoters = 0;
       let totalSum = 0;
-      playersData.forEach(player => {
-        const userVote = userVotes[player.id];
-        const hasVoted = userVote !== undefined;
-        const currentAvg = hasVoted
-          ? ((player.initialAvg * BASE_VOTERS) + userVote) / (BASE_VOTERS + 1)
-          : player.initialAvg;
-        totalSum += currentAvg;
+      let ratedPlayersCount = 0;
+
+      playersList.forEach(player => {
+        const stats = playerStats[player.id] || { averageRating: player.initial_avg, totalVotes: 0 };
+        // Si el usuario votó y es local fallback, incrementamos de forma simulada el total
+        const count = stats.totalVotes + (window.isSupabaseConfigured ? 0 : (userVotes[player.id] !== undefined ? 183 : 182));
+        
+        if (count > maxVoters) {
+          maxVoters = count;
+        }
+
+        totalSum += stats.averageRating;
+        ratedPlayersCount++;
       });
 
-      const teamAvg = (totalSum / playersData.length).toFixed(1);
+      document.getElementById("total-voters-display").innerText = maxVoters.toLocaleString('es-AR');
+
+      // Promedio del equipo general de la comunidad
+      const teamAvg = ratedPlayersCount > 0 ? (totalSum / ratedPlayersCount).toFixed(1) : "0.0";
       document.getElementById("team-community-avg").innerText = teamAvg;
     }
   </script>
