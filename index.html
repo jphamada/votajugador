@@ -510,7 +510,6 @@
   <!-- PIE DE PÁGINA -->
   <footer>
     <p>© 2026 | Diseño Editorial Mockup</p>
-    <a href="admin.html">Ir al Panel de Administración</a>
   </footer>
 
   <script>
@@ -567,8 +566,7 @@
         console.error(err);
         document.getElementById("players-container").innerHTML = `
           <div class="loading-state" style="color: var(--accent-red);">
-            Error al cargar el partido. Asegúrate de haber ejecutado los scripts de base de datos o revisa la consola.<br>
-            <a href="admin.html" class="btn" style="margin-top: 1.5rem; display: inline-flex;">Cargar un partido nuevo</a>
+            Error al cargar el partido. Asegúrate de haber ingresado un ID de partido válido o de haber configurado tu base de datos correctamente.
           </div>
         `;
       }
