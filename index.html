@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calificá a la Selección Argentina vs Egipto</title>
+  <meta name="description" content="Poneles puntaje a los jugadores de la Selección Argentina tras el triunfo 3-2 sobre Egipto y compará tu opinión con la del resto de los hinchas.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* VARIABLES DEL SISTEMA EDITORIAL CLEAN */
+    :root {
+      --bg-color: #ffffff;
+      --text-color: #1a1a1a;
+      --text-muted: #718096;
+      --text-light: #a0aec0;
+      --border-color: #e2e8f0;
+      
+      --accent-red: #e53e3e;
+      --accent-red-hover: #c53030;
+      --bar-community: #4a5568;
+      
+      --font-serif: 'Georgia', serif;
+      --font-sans: 'Inter', 'Arial', 'Helvetica', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      line-height: 1.8;
+      padding: 0;
+    }
+
+    /* CONTENEDOR CENTRALIZADO CON MÁRGENES AMPLIO A LOS LADOS */
+    .container {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 4rem 1.5rem;
+      flex-grow: 1;
+    }
+
+    /* METADATOS EDITORIALES */
+    .editorial-meta {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .editorial-meta .dot {
+      color: var(--text-light);
+    }
+
+    .editorial-meta .live-tag {
+      color: var(--accent-red);
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .editorial-meta .live-tag::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background-color: var(--accent-red);
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.4; }
+      50% { opacity: 1; }
+      100% { opacity: 0.4; }
+    }
+
+    /* ENCABEZADO SERIF AUTORITARIO Y CENTRADO */
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .main-headline {
+      font-family: var(--font-serif);
+      font-size: clamp(2rem, 4.5vw, 3.2rem);
+      font-weight: 700;
+      line-height: 1.15;
+      color: var(--text-color);
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle-editorial {
+      font-size: clamp(1.05rem, 1.8vw, 1.25rem);
+      color: #2d3748;
+      max-width: 720px;
+      margin: 0 auto;
+      font-weight: 400;
+      line-height: 1.6;
+    }
+
+    /* IMAGEN HERO DE ALTO IMPACTO */
+    .main-hero-image {
+      margin-bottom: 3.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1rem;
+    }
+
+    .main-hero-image img {
+      width: 100%;
+      height: auto;
+      max-height: 480px;
+      object-fit: cover;
+      display: block;
+      border-radius: 4px;
+    }
+
+    .image-caption {
+      display: block;
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      font-style: italic;
+    }
+
+    /* CONTROLES EDITORIALES FINOS */
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1.5rem 0;
+      margin-bottom: 3rem;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .stats-summary {
+      display: flex;
+      gap: 2.5rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-box {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    .stat-value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text-color);
+      font-family: var(--font-sans);
+    }
+
+    .stat-value.red-accent {
+      color: var(--accent-red);
+    }
+
+    .btn {
+      font-family: var(--font-sans);
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 0.6rem 1.2rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: 1px solid var(--border-color);
+      background: transparent;
+      color: var(--text-color);
+    }
+
+    .btn:hover:not(:disabled) {
+      background: #f7fafc;
+      border-color: var(--text-muted);
+    }
+
+    .btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    /* LISTA VERTICAL DE JUGADORES */
+    .players-list {
+      display: flex;
+      flex-direction: column;
+      gap: 3.5rem;
+      margin-bottom: 4rem;
+    }
+
+    /* FILA / TARJETA MINIMALISTA DE JUGADOR */
+    .player-row {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 3rem;
+    }
+
+    .player-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    /* PERFIL DEL JUGADOR */
+    .player-header {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .player-avatar-container {
+      width: 75px;
+      height: 75px;
+      border-radius: 50%;
+      overflow: hidden;
+      flex-shrink: 0;
+      background-color: #f7fafc;
+      border: 1px solid var(--border-color);
+    }
+
+    .player-avatar {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+    }
+
+    .player-meta {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .player-number-role {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .player-name-container {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .player-name {
+      font-family: var(--font-serif);
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text-color);
+    }
+
+    .player-voted-dot {
+      background-color: var(--accent-red);
+      color: #ffffff;
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+      text-transform: uppercase;
+      display: none;
+    }
+
+    .player-row.has-voted .player-voted-dot {
+      display: inline-block;
+    }
+
+    /* SECCIÓN DE VOTACIÓN A LA DERECHA/ABAJO */
+    .player-interactive {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .rating-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .score-buttons {
+      display: flex;
+      gap: 0.25rem;
+      flex-wrap: wrap;
+    }
+
+    .score-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      width: 38px;
+      height: 38px;
+      border-radius: 4px;
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .score-btn:hover {
+      background: #f7fafc;
+      border-color: var(--text-muted);
+    }
+
+    .score-btn.selected {
+      background-color: var(--accent-red);
+      color: #ffffff;
+      border-color: var(--accent-red);
+    }
+
+    /* COMPARACIÓN EN LÍNEA EDITORIAL */
+    .comparison-section {
+      height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .player-row.has-voted .comparison-section {
+      height: 90px;
+      opacity: 1;
+      margin-top: 0.5rem;
+    }
+
+    .bar-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .bar-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .bar-header strong {
+      color: var(--text-color);
+    }
+
+    .bar-bg {
+      background: #edf2f7;
+      height: 4px;
+      width: 100%;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 0;
+      transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .bar-fill.user-voted {
+      background-color: var(--accent-red);
+    }
+
+    .bar-fill.community-avg {
+      background-color: var(--bar-community);
+    }
+
+    /* PIE DE PÁGINA */
+    footer {
+      text-align: center;
+      padding: 3rem 1.5rem;
+      border-top: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      background: #fafafa;
+    }
+
+    footer p {
+      margin-bottom: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- METADATOS EDITORIALES -->
+    <div class="editorial-meta">
+      <span>JUGÁ Y CALIFICÁ</span>
+      <span class="dot">•</span>
+      <span>DEPORTES</span>
+      <span class="dot">•</span>
+      <span class="live-tag">ACTUALIZADO EN VIVO</span>
+    </div>
+
+    <!-- ENCABEZADO -->
+    <header>
+      <h1 class="main-headline">¿Cómo jugó la Selección?</h1>
+      <p class="subtitle-editorial">Calificá el rendimiento de los futbolistas argentinos en la gran victoria 3-2 sobre Egipto por la fase de grupos y compará tus puntajes con el promedio general de los lectores.</p>
+    </header>
+
+    <!-- FOTO PRINCIPAL HERO -->
+    <div class="main-hero-image">
+      <img src="images/messi.png" alt="Lionel Messi celebrando en el partido">
+      <span class="image-caption">El capitán argentino comandó el triunfo del seleccionado nacional ante Egipto. Foto: Prensa / IA Mockup</span>
+    </div>
+
+    <!-- PANEL GENERAL DE CONTROL -->
+    <div class="controls">
+      <div class="stats-summary">
+        <div class="stat-box">
+          <span class="stat-label">Tus Calificaciones</span>
+          <span class="stat-value" id="user-voted-count">0 / 5</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Promedio de la Gente</span>
+          <span class="stat-value red-accent" id="team-community-avg">7.8</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Total de Hinchas</span>
+          <span class="stat-value" id="total-voters-display">1.482</span>
+        </div>
+      </div>
+      <button class="btn" id="reset-button" disabled>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+        </svg>
+        Reiniciar mis votos
+      </button>
+    </div>
+
+    <!-- LISTADO DE JUGADORES -->
+    <main class="players-list" id="players-container">
+      <!-- Los jugadores se generan mediante JavaScript -->
+    </main>
+
+  </div>
+
+  <!-- PIE DE PÁGINA -->
+  <footer>
+    <p>© 2026 | Diseño Editorial Mockup</p>
+  </footer>
+
+  <script>
+    // DATOS DE LOS JUGADORES
+    const playersData = [
+      {
+        id: "messi",
+        name: "Lionel Messi",
+        number: 10,
+        position: "Delantero / Capitán",
+        image: "images/messi.png",
+        initialAvg: 8.7
+      },
+      {
+        id: "dibu",
+        name: "Emiliano Martínez",
+        number: 23,
+        position: "Arquero",
+        image: "images/dibu.png",
+        initialAvg: 8.2
+      },
+      {
+        id: "depaul",
+        name: "Rodrigo De Paul",
+        number: 7,
+        position: "Mediocampista",
+        image: "images/depaul.png",
+        initialAvg: 6.9
+      },
+      {
+        id: "lautaro",
+        name: "Lautaro Martínez",
+        number: 22,
+        position: "Delantero",
+        image: "images/lautaro.png",
+        initialAvg: 7.8
+      },
+      {
+        id: "romero",
+        name: "Cristian Romero",
+        number: 13,
+        position: "Defensor Central",
+        image: "images/romero.png",
+        initialAvg: 7.4
+      }
+    ];
+
+    // CONFIGURACIÓN LOCAL
+    const BASE_VOTERS = 1482; // Votos base simulados
+    let userVotes = JSON.parse(localStorage.getItem('user_votes_arg_egy')) || {};
+
+    // INICIALIZACIÓN
+    document.addEventListener("DOMContentLoaded", () => {
+      renderPlayers();
+      updateGlobalStatus();
+      
+      // Configuración del botón de reiniciar
+      const resetBtn = document.getElementById("reset-button");
+      resetBtn.addEventListener("click", () => {
+        userVotes = {};
+        localStorage.removeItem('user_votes_arg_egy');
+        renderPlayers();
+        updateGlobalStatus();
+      });
+    });
+
+    // RENDERIZADO DE JUGADORES
+    function renderPlayers() {
+      const container = document.getElementById("players-container");
+      container.innerHTML = "";
+
+      playersData.forEach(player => {
+        const userVote = userVotes[player.id];
+        const hasVoted = userVote !== undefined;
+
+        // Calcular el promedio simulado agregando el voto del usuario si existe
+        const calculatedAvg = hasVoted
+          ? (((player.initialAvg * BASE_VOTERS) + userVote) / (BASE_VOTERS + 1)).toFixed(1)
+          : player.initialAvg.toFixed(1);
+
+        const row = document.createElement("article");
+        row.className = `player-row ${hasVoted ? 'has-voted' : ''}`;
+        row.id = `row-${player.id}`;
+
+        row.innerHTML = `
+          <div class="player-header">
+            <div class="player-avatar-container">
+              <img class="player-avatar" src="${player.image}" alt="Foto de ${player.name}">
+            </div>
+            <div class="player-meta">
+              <span class="player-number-role">N°${player.number} • ${player.position}</span>
+              <div class="player-name-container">
+                <h2 class="player-name">${player.name}</h2>
+                <span class="player-voted-dot" id="voted-dot-${player.id}">Votado</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="player-interactive">
+            <div class="rating-label">Tu Calificación:</div>
+            <div class="score-buttons">
+              ${Array.from({ length: 10 }, (_, i) => i + 1).map(num => `
+                <button class="score-btn ${userVote === num ? 'selected' : ''}" 
+                        onclick="registerVote('${player.id}', ${num})">${num}</button>
+              `).join('')}
+            </div>
+
+            <div class="comparison-section">
+              <div class="bar-container">
+                <div class="bar-header">
+                  <span>Tu calif: <strong id="val-user-${player.id}">${userVote || '-'}</strong></span>
+                </div>
+                <div class="bar-bg">
+                  <div class="bar-fill user-voted" id="bar-user-${player.id}" style="width: ${hasVoted ? userVote * 10 : 0}%"></div>
+                </div>
+              </div>
+              <div class="bar-container">
+                <div class="bar-header">
+                  <span>Promedio de la comunidad: <strong id="val-comm-${player.id}">${calculatedAvg}</strong></span>
+                </div>
+                <div class="bar-bg">
+                  <div class="bar-fill community-avg" id="bar-comm-${player.id}" style="width: ${hasVoted ? calculatedAvg * 10 : 0}%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    // REGISTRO DE VOTO INDIVIDUAL
+    window.registerVote = function (playerId, voteValue) {
+      // Registrar en el estado e interfaz
+      userVotes[playerId] = voteValue;
+      localStorage.setItem('user_votes_arg_egy', JSON.stringify(userVotes));
+
+      // Encontrar los datos estáticos del jugador
+      const player = playersData.find(p => p.id === playerId);
+      
+      // Calcular promedio nuevo
+      const calculatedAvg = (((player.initialAvg * BASE_VOTERS) + voteValue) / (BASE_VOTERS + 1)).toFixed(1);
+
+      // Actualizar fila del jugador
+      const row = document.getElementById(`row-${playerId}`);
+      row.classList.add('has-voted');
+
+      // Actualizar botones de puntaje
+      const buttons = row.querySelectorAll('.score-btn');
+      buttons.forEach((btn, index) => {
+        if (index + 1 === voteValue) {
+          btn.classList.add('selected');
+        } else {
+          btn.classList.remove('selected');
+        }
+      });
+
+      // Actualizar etiquetas y badges
+      document.getElementById(`voted-dot-${playerId}`).style.display = 'inline-block';
+      document.getElementById(`val-user-${playerId}`).innerText = voteValue;
+      document.getElementById(`val-comm-${playerId}`).innerText = calculatedAvg;
+
+      // Animar barras
+      setTimeout(() => {
+        document.getElementById(`bar-user-${playerId}`).style.width = `${voteValue * 10}%`;
+        document.getElementById(`bar-comm-${playerId}`).style.width = `${calculatedAvg * 10}%`;
+      }, 50);
+
+      // Actualizar conteos globales
+      updateGlobalStatus();
+    };
+
+    // ACTUALIZAR MÁS INFORMACIÓN A NIVEL GLOBAL
+    function updateGlobalStatus() {
+      const votedKeys = Object.keys(userVotes);
+      const votedCount = votedKeys.length;
+
+      // Actualizar contadores
+      document.getElementById("user-voted-count").innerText = `${votedCount} / 5`;
+      document.getElementById("reset-button").disabled = votedCount === 0;
+
+      // Incrementar el total de votantes si el usuario votó al menos uno
+      const totalVoters = votedCount > 0 ? BASE_VOTERS + 1 : BASE_VOTERS;
+      document.getElementById("total-voters-display").innerText = totalVoters.toLocaleString('es-AR');
+
+      // Calcular el promedio general de todo el equipo según las calificaciones de la comunidad
+      let totalSum = 0;
+      playersData.forEach(player => {
+        const userVote = userVotes[player.id];
+        const hasVoted = userVote !== undefined;
+        const currentAvg = hasVoted
+          ? ((player.initialAvg * BASE_VOTERS) + userVote) / (BASE_VOTERS + 1)
+          : player.initialAvg;
+        totalSum += currentAvg;
+      });
+
+      const teamAvg = (totalSum / playersData.length).toFixed(1);
+      document.getElementById("team-community-avg").innerText = teamAvg;
+    }
+  </script>
+</body>
+</html>
