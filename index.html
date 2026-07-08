@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calificá a la Selección Argentina vs Egipto</title>
-  <meta name="description" content="Poneles puntaje a los jugadores de la Selección Argentina tras el triunfo 3-2 sobre Egipto y compará tu opinión con la del resto de los hinchas.">
-  
+  <meta name="description"
+    content="Poneles puntaje a los jugadores de la Selección Argentina tras el triunfo 3-2 sobre Egipto y compará tu opinión con la del resto de los hinchas.">
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,11 +26,11 @@
       --text-muted: #718096;
       --text-light: #a0aec0;
       --border-color: #e2e8f0;
-      
+
       --accent-red: #e53e3e;
       --accent-red-hover: #c53030;
       --bar-community: #4a5568;
-      
+
       --font-serif: 'Georgia', serif;
       --font-sans: 'Inter', 'Arial', 'Helvetica', sans-serif;
     }
@@ -99,9 +101,17 @@
     }
 
     @keyframes pulse {
-      0% { opacity: 0.4; }
-      50% { opacity: 1; }
-      100% { opacity: 0.4; }
+      0% {
+        opacity: 0.4;
+      }
+
+      50% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0.4;
+      }
     }
 
     /* ENCABEZADO SERIF AUTORITARIO Y CENTRADO */
@@ -451,18 +461,13 @@
     }
   </style>
 </head>
+
 <body>
 
   <div class="container" id="main-container">
-    
-    <!-- METADATOS EDITORIALES -->
-    <div class="editorial-meta">
-      <span>JUGÁ Y CALIFICÁ</span>
-      <span class="dot">•</span>
-      <span>DEPORTES</span>
-      <span class="dot">•</span>
-      <span class="live-tag">ACTUALIZADO EN VIVO</span>
-    </div>
+
+
+
 
     <!-- ENCABEZADO DINÁMICO -->
     <header>
@@ -473,7 +478,7 @@
     <!-- FOTO PRINCIPAL HERO DINÁMICA -->
     <div class="main-hero-image" id="match-hero-container" style="display: none;">
       <img id="match-hero-img" src="" alt="Imagen destacada del partido">
-      <span class="image-caption" id="match-hero-caption">Foto de Prensa / IA Mockup</span>
+
     </div>
 
     <!-- PANEL GENERAL DE CONTROL -->
@@ -493,7 +498,8 @@
         </div>
       </div>
       <button class="btn" id="reset-button" disabled>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
           <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
         </svg>
         Reiniciar mis votos
@@ -505,11 +511,18 @@
       <div class="loading-state">Cargando el listado de jugadores...</div>
     </main>
 
+    <!-- CONFIRMAR VOTACIÓN -->
+    <div class="submit-votes-container" id="submit-votes-wrapper" style="display: none; text-align: center; margin: 3rem 0; border-top: 1px solid var(--border-color); padding-top: 2rem;">
+      <button class="btn btn-red" id="confirm-votes-btn" style="font-size: 1.1rem; padding: 0.9rem 2.5rem; border-radius: 6px; width: 100%; max-width: 400px; justify-content: center;" disabled>
+        Confirmar y Enviar mis Votos
+      </button>
+    </div>
+
   </div>
 
   <!-- PIE DE PÁGINA -->
   <footer>
-    <p>© 2026 | Diseño Editorial Mockup</p>
+
   </footer>
 
   <script>
@@ -517,6 +530,7 @@
     let playersList = [];
     let userVotes = {};
     let playerStats = {};
+    let tempVotes = {};
 
     // INICIALIZACIÓN
     document.addEventListener("DOMContentLoaded", async () => {
@@ -556,9 +570,44 @@
             }
             // Recargar interfaz
             userVotes = {};
+            tempVotes = {};
             await refreshStats();
             renderPlayers();
             updateGlobalStatus();
+          }
+        });
+
+        // 4. Configurar botón para confirmar y enviar votaciones
+        const confirmBtn = document.getElementById("confirm-votes-btn");
+        confirmBtn.addEventListener("click", async () => {
+          const tempKeys = Object.keys(tempVotes);
+          if (tempKeys.length === 0) return;
+
+          confirmBtn.disabled = true;
+          const originalText = confirmBtn.innerText;
+          confirmBtn.innerText = "Enviando votos...";
+
+          try {
+            // Guardar todos los votos temporales en paralelo
+            await Promise.all(tempKeys.map(playerId => 
+              DB.submitVote(playerId, tempVotes[playerId])
+            ));
+
+            // Combinar con los votos ya permanentes
+            Object.assign(userVotes, tempVotes);
+            tempVotes = {};
+
+            // Refrescar estadísticas y redibujar con barras de promedio
+            await refreshStats();
+            renderPlayers();
+            updateGlobalStatus();
+
+            alert("¡Calificaciones enviadas correctamente!");
+          } catch (err) {
+            console.error(err);
+            alert("Ocurrió un error al enviar tus votos:\n" + err.message);
+            confirmBtn.disabled = false;
+            confirmBtn.innerText = originalText;
           }
         });
 
@@ -581,7 +630,7 @@
           .select('id')
           .order('created_at', { ascending: false })
           .limit(1);
-        
+
         if (data && data.length > 0) {
           return data[0].id;
         } else {
@@ -625,7 +674,7 @@
       const match = await DB.getMatch(matchId);
       document.getElementById("match-title").innerText = match.title;
       document.getElementById("match-summary").innerText = match.summary;
-      
+
       if (match.hero_image_url) {
         const heroImg = document.getElementById("match-hero-img");
         heroImg.src = match.hero_image_url;
@@ -691,10 +740,13 @@
           <div class="player-interactive">
             <div class="rating-label">Tu Calificación:</div>
             <div class="score-buttons">
-              ${Array.from({ length: 10 }, (_, i) => i + 1).map(num => `
-                <button class="score-btn ${userVote === num ? 'selected' : ''}" 
-                        onclick="registerVote('${player.id}', ${num})">${num}</button>
-              `).join('')}
+              ${Array.from({ length: 10 }, (_, i) => i + 1).map(num => {
+                const isSelected = (hasVoted && userVote === num) || (!hasVoted && tempVotes[player.id] === num);
+                return `
+                  <button class="score-btn ${isSelected ? 'selected' : ''}" 
+                          ${hasVoted ? 'disabled' : `onclick="selectTempVote('${player.id}', ${num})"`}>${num}</button>
+                `;
+              }).join('')}
             </div>
 
             <div class="comparison-section">
@@ -721,51 +773,23 @@
       });
     }
 
-    // REGISTRO DE VOTO INDIVIDUAL
-    window.registerVote = async function (playerId, voteValue) {
-      try {
-        // Enviar voto a la base de datos o localstorage
-        await DB.submitVote(playerId, voteValue);
-        userVotes[playerId] = voteValue;
+    // SELECCIÓN TEMPORAL DE VOTO (EN MEMORIA)
+    window.selectTempVote = function (playerId, voteValue) {
+      tempVotes[playerId] = voteValue;
 
-        // Refrescar y recalcular estadísticas
-        await refreshStats();
-        
-        const stats = playerStats[playerId] || { averageRating: voteValue, totalVotes: 1 };
-        const calculatedAvg = stats.averageRating.toFixed(1);
+      // Actualizar visualmente la fila del jugador
+      const row = document.getElementById(`row-${playerId}`);
+      const buttons = row.querySelectorAll('.score-btn');
+      buttons.forEach((btn, index) => {
+        if (index + 1 === voteValue) {
+          btn.classList.add('selected');
+        } else {
+          btn.classList.remove('selected');
+        }
+      });
 
-        // Actualizar fila del jugador en caliente
-        const row = document.getElementById(`row-${playerId}`);
-        row.classList.add('has-voted');
-
-        // Actualizar botones de puntaje
-        const buttons = row.querySelectorAll('.score-btn');
-        buttons.forEach((btn, index) => {
-          if (index + 1 === voteValue) {
-            btn.classList.add('selected');
-          } else {
-            btn.classList.remove('selected');
-          }
-        });
-
-        // Actualizar etiquetas y barras comparativas
-        document.getElementById(`voted-dot-${playerId}`).style.display = 'inline-block';
-        document.getElementById(`val-user-${playerId}`).innerText = voteValue;
-        document.getElementById(`val-comm-${playerId}`).innerText = calculatedAvg;
-
-        // Animar barras
-        setTimeout(() => {
-          document.getElementById(`bar-user-${playerId}`).style.width = `${voteValue * 10}%`;
-          document.getElementById(`bar-comm-${playerId}`).style.width = `${calculatedAvg * 10}%`;
-        }, 50);
-
-        // Actualizar conteos globales
-        updateGlobalStatus();
-
-      } catch (err) {
-        console.error(err);
-        alert("Ocurrió un error al procesar tu voto: " + err.message);
-      }
+      // Actualizar contadores globales y habilitar el botón de enviar
+      updateGlobalStatus();
     };
 
     // ACTUALIZAR ESTADÍSTICAS GLOBALES
@@ -777,16 +801,34 @@
       document.getElementById("user-voted-count").innerText = `${votedCount} / ${playersList.length}`;
       document.getElementById("reset-button").disabled = votedCount === 0;
 
-      // Obtener el total acumulado de votantes únicos (aproximado usando el máximo totalVotes de cualquiera de los jugadores)
+      // Mostrar/Ocultar y habilitar botón de enviar votos
+      const confirmWrapper = document.getElementById("submit-votes-wrapper");
+      if (confirmWrapper) {
+        if (votedCount > 0) {
+          confirmWrapper.style.display = "none";
+        } else {
+          confirmWrapper.style.display = "block";
+          
+          const confirmBtn = document.getElementById("confirm-votes-btn");
+          if (confirmBtn) {
+            const tempCount = Object.keys(tempVotes).length;
+            confirmBtn.disabled = tempCount === 0;
+            confirmBtn.innerText = `Confirmar y Enviar mis Votos (${tempCount} seleccionados)`;
+          }
+        }
+      }
+
+      // Obtener el total acumulado de votantes únicos
       let maxVoters = 0;
       let totalSum = 0;
       let ratedPlayersCount = 0;
 
       playersList.forEach(player => {
         const stats = playerStats[player.id] || { averageRating: player.initial_avg, totalVotes: 0 };
+        const userHasVoted = userVotes[player.id] !== undefined;
         // Si el usuario votó y es local fallback, incrementamos de forma simulada el total
-        const count = stats.totalVotes + (window.isSupabaseConfigured ? 0 : (userVotes[player.id] !== undefined ? 183 : 182));
-        
+        const count = stats.totalVotes + (window.isSupabaseConfigured ? 0 : (userHasVoted ? 183 : 182));
+
         if (count > maxVoters) {
           maxVoters = count;
         }
@@ -803,4 +845,5 @@
     }
   </script>
 </body>
+
 </html>

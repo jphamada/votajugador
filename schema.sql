@@ -70,6 +70,8 @@ CREATE POLICY "Permitir creación pública de partidos" ON matches FOR INSERT WI
 CREATE POLICY "Permitir lectura pública de jugadores" ON players FOR SELECT USING (true);
 CREATE POLICY "Permitir creación pública de jugadores" ON players FOR INSERT WITH CHECK (true);
 
--- Políticas para Votes (Público puede leer e insertar votos)
+-- Políticas para Votes (Público puede leer, insertar, actualizar y eliminar votos)
 CREATE POLICY "Permitir lectura pública de votos" ON votes FOR SELECT USING (true);
 CREATE POLICY "Permitir inserción pública de votos" ON votes FOR INSERT WITH CHECK (true);
+CREATE POLICY "Permitir actualización pública de votos" ON votes FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "Permitir eliminación pública de votos" ON votes FOR DELETE USING (true);
