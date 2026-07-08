@@ -383,6 +383,26 @@
 </head>
 <body>
 
+  <!-- PANTALLA DE LOGIN -->
+  <div id="login-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #f7fafc; display: flex; align-items: center; justify-content: center; z-index: 2000;">
+    <div style="background: #ffffff; padding: 3rem 2rem; border-radius: 8px; border: 1px solid var(--border-color); width: 90%; max-width: 400px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); text-align: center;">
+      <h2 style="font-family: var(--font-serif); font-size: 1.75rem; margin-bottom: 0.5rem;">Panel de Control</h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 2rem;">Ingresa tus credenciales para administrar los partidos.</p>
+      
+      <form onsubmit="handleLogin(event)">
+        <div class="form-group" style="text-align: left; margin-bottom: 1.25rem;">
+          <label>Usuario</label>
+          <input type="text" id="login-user" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 4px;">
+        </div>
+        <div class="form-group" style="text-align: left; margin-bottom: 2rem;">
+          <label>Contraseña</label>
+          <input type="password" id="login-pass" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 4px;">
+        </div>
+        <button type="submit" class="btn btn-red" id="login-submit-btn" style="width: 100%; justify-content: center; font-size: 0.95rem;">Iniciar Sesión</button>
+      </form>
+    </div>
+  </div>
+
   <div class="container">
     <header>
       <h1 class="title-admin" id="page-title">Cargar Nuevo Partido</h1>
@@ -490,6 +510,14 @@
     let editingMatchId = null;
 
     document.addEventListener("DOMContentLoaded", async () => {
+      // Verificar si ya hay una sesión iniciada
+      if (sessionStorage.getItem('admin_logged_in') === 'true') {
+        document.getElementById("login-overlay").style.display = "none";
+        await initAdminPanel();
+      }
+    });
+
+    async function initAdminPanel() {
       // Inicializar conexión con base de datos (Vercel o config.js)
       await DB.initialize();
 
@@ -509,7 +537,60 @@
       // Enviar formulario
       const form = document.getElementById("match-form");
       form.addEventListener("submit", handleFormSubmit);
-    });
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const loginBtn = document.getElementById("login-submit-btn");
+      loginBtn.disabled = true;
+      loginBtn.innerText = "Verificando...";
+
+      const username = document.getElementById("login-user").value;
+      const password = document.getElementById("login-pass").value;
+
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username, password })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            sessionStorage.setItem('admin_logged_in', 'true');
+            document.getElementById("login-overlay").style.display = "none";
+            await initAdminPanel();
+          } else {
+            alert("Usuario o contraseña incorrectos.");
+          }
+        } else {
+          // Fallback a credenciales fijas si la API no está disponible (ej: corriendo localmente sin Vercel)
+          if (username === "admin" && password === "lgad202!#$") {
+            sessionStorage.setItem('admin_logged_in', 'true');
+            document.getElementById("login-overlay").style.display = "none";
+            await initAdminPanel();
+          } else {
+            alert("Usuario o contraseña incorrectos.");
+          }
+        }
+      } catch (err) {
+        // Fallback a credenciales fijas en caso de error de red local
+        if (username === "admin" && password === "lgad202!#$") {
+          sessionStorage.setItem('admin_logged_in', 'true');
+          document.getElementById("login-overlay").style.display = "none";
+          await initAdminPanel();
+        } else {
+          console.error(err);
+          alert("Error de conexión. Inténtalo de nuevo.");
+        }
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.innerText = "Iniciar Sesión";
+      }
+    }
 
     // Cambiar de pestaña (Crear vs Editar)
     async function switchTab(tab) {
