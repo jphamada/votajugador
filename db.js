@@ -93,14 +93,14 @@ const DB = {
         .from('players')
         .select('*')
         .eq('match_id', matchId)
-        .order('number', { ascending: true });
+        .order('created_at', { ascending: true });
       if (error) throw error;
       return data;
     } else {
       const players = JSON.parse(localStorage.getItem('mock_players'));
       return players
         .filter(p => p.match_id === matchId)
-        .sort((a, b) => a.number - b.number);
+        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
     }
   },
 
@@ -297,7 +297,6 @@ const DB = {
         formattedPlayers.push({
           match_id: matchId,
           name: p.name,
-          number: p.number,
           position: p.position,
           image_url: playerImageUrl,
           initial_avg: p.initialAvg || p.initial_avg
@@ -317,10 +316,10 @@ const DB = {
           id: generateUUID(),
           match_id: matchId,
           name: p.name,
-          number: p.number,
           position: p.position,
           image_url: p.imageUrl || p.image_url, // Contiene string Base64 o URL mock
-          initial_avg: p.initialAvg || p.initial_avg
+          initial_avg: p.initialAvg || p.initial_avg,
+          created_at: new Date().toISOString()
         });
       });
       
@@ -366,7 +365,6 @@ const DB = {
         const playerData = {
           match_id: matchId,
           name: p.name,
-          number: p.number,
           position: p.position,
           initial_avg: p.initialAvg || p.initial_avg || 0.0
         };
@@ -407,7 +405,6 @@ const DB = {
           const idx = allPlayers.findIndex(x => x.id === p.id);
           if (idx > -1) {
             allPlayers[idx].name = p.name;
-            allPlayers[idx].number = p.number;
             allPlayers[idx].position = p.position;
             allPlayers[idx].initial_avg = p.initialAvg || p.initial_avg;
             if (p.imageUrl || p.image_url) {
@@ -420,10 +417,10 @@ const DB = {
             id: generateUUID(),
             match_id: matchId,
             name: p.name,
-            number: p.number,
             position: p.position,
             image_url: p.imageUrl || p.image_url || "https://via.placeholder.com/150",
-            initial_avg: p.initialAvg || p.initial_avg || 0.0
+            initial_avg: p.initialAvg || p.initial_avg || 0.0,
+            created_at: new Date().toISOString()
           });
         }
       });
@@ -432,7 +429,30 @@ const DB = {
     }
   },
 
-  // 10. Obtener votos del usuario actual para un partido
+  // 10. Duplicar un partido completo con todos sus jugadores
+  async duplicateMatch(matchId) {
+    // 1. Obtener datos del partido original
+    const match = await this.getMatch(matchId);
+    
+    // 2. Obtener lista de jugadores originales
+    const players = await this.getPlayers(matchId);
+    
+    // 3. Crear el nuevo partido duplicado (copiando título, copete y portada)
+    const newMatchId = await this.createMatch(`[Copia] ${match.title}`, match.summary, match.hero_image_url);
+    
+    // 4. Copiar los jugadores asignándoles el nuevo match_id
+    const playersCopy = players.map(p => ({
+      name: p.name,
+      position: p.position,
+      imageUrl: p.image_url,
+      initialAvg: p.initial_avg
+    }));
+    
+    await this.addPlayers(newMatchId, playersCopy);
+    return newMatchId;
+  },
+
+  // 11. Obtener votos del usuario actual para un partido
   async getUserVotes(matchId) {
     const userUuid = getOrCreateUserUUID();
     const votesObj = {};

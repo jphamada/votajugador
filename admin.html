@@ -244,7 +244,7 @@
 
     .player-row-fields {
       display: grid;
-      grid-template-columns: 80px 1fr 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 1rem;
       margin-bottom: 1rem;
     }
@@ -398,11 +398,12 @@
     <!-- PANEL SELECTOR DE EDICIÓN -->
     <div class="edit-selector-panel" id="edit-selector-container" style="display: none;">
       <label for="edit-match-dropdown">Selecciona el Partido a Editar</label>
-      <div style="display: flex; gap: 1rem; margin-top: 0.5rem; flex-wrap: wrap;">
-        <select id="edit-match-dropdown">
+      <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem; flex-wrap: wrap;">
+        <select id="edit-match-dropdown" style="flex-grow: 1;">
           <option value="">Cargando partidos disponibles...</option>
         </select>
         <button type="button" class="btn btn-red" id="load-edit-btn" onclick="loadMatchToEdit()">Cargar para Editar</button>
+        <button type="button" class="btn" id="duplicate-match-btn" onclick="duplicateMatch()">Duplicar Partido</button>
       </div>
     </div>
 
@@ -608,7 +609,6 @@
           card.dataset.imageUrl = p.image_url;
 
           // Rellenar campos de texto
-          card.querySelector('.player-number').value = p.number;
           card.querySelector('.player-name').value = p.name;
           card.querySelector('.player-position').value = p.position;
           card.querySelector('.player-initial-avg').value = p.initial_avg;
@@ -684,10 +684,6 @@
         <button type="button" class="remove-player-btn" onclick="removePlayerRow(${playerIndex})">Remover</button>
         
         <div class="player-row-fields">
-          <div class="form-group">
-            <label>N°</label>
-            <input type="text" class="player-number" placeholder="10" required>
-          </div>
           <div class="form-group">
             <label>Nombre Completo</label>
             <input type="text" class="player-name" placeholder="Lionel Messi" required>
@@ -808,7 +804,6 @@
 
         for (const card of playerCardElms) {
           const id = card.dataset.playerId || null; // Será string-ID si ya existía en la base de datos
-          const number = parseInt(card.querySelector(".player-number").value, 10);
           const name = card.querySelector(".player-name").value;
           const position = card.querySelector(".player-position").value;
           const initialAvg = parseFloat(card.querySelector(".player-initial-avg").value) || 0.0;
@@ -820,7 +815,6 @@
           const playerPayload = {
             id,
             name,
-            number,
             position,
             initialAvg
           };
@@ -906,6 +900,38 @@
       // Si estábamos en edición, al cerrar volvemos a la pestaña de creación para refrescar
       if (editMode) {
         switchTab('create');
+      }
+    }
+
+    // Duplicar un partido completo
+    async function duplicateMatch() {
+      const matchId = document.getElementById('edit-match-dropdown').value;
+      if (!matchId) {
+        alert("Por favor, selecciona un partido de la lista.");
+        return;
+      }
+
+      const dupBtn = document.getElementById('duplicate-match-btn');
+      dupBtn.disabled = true;
+      const originalText = dupBtn.innerText;
+      dupBtn.innerText = "Duplicando...";
+
+      try {
+        const newMatchId = await DB.duplicateMatch(matchId);
+        alert("¡Partido duplicado con éxito! Se cargará la copia para que la edites.");
+        
+        // Actualizar el dropdown y seleccionar el nuevo partido
+        await populateMatchDropdown();
+        document.getElementById('edit-match-dropdown').value = newMatchId;
+        
+        // Cargar el clon para editarlo
+        await loadMatchToEdit();
+      } catch (err) {
+        console.error(err);
+        alert("Ocurrió un error al duplicar el partido:\n" + err.message);
+      } finally {
+        dupBtn.disabled = false;
+        dupBtn.innerText = originalText;
       }
     }
   </script>
