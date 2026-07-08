@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panel de Administración - Cargar Partido</title>
+  <title>Panel de Administración - Cargar y Editar Partidos</title>
   
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -85,6 +85,54 @@
       color: #2b6cb0;
     }
 
+    /* PESTAÑAS EDITORIALES */
+    .tabs-wrapper {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 2.5rem;
+      gap: 1.5rem;
+    }
+
+    .tab-btn {
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      border: none;
+      background: none;
+      padding: 0.75rem 0;
+      cursor: pointer;
+      position: relative;
+      transition: color 0.2s;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-color);
+    }
+
+    .tab-btn.active {
+      color: var(--accent-red);
+    }
+
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background-color: var(--accent-red);
+    }
+
+    /* SELECTOR DE MODO DE EDICIÓN */
+    .edit-selector-panel {
+      background: #f7fafc;
+      border: 1px solid var(--border-color);
+      padding: 1.5rem;
+      border-radius: 6px;
+      margin-bottom: 2.5rem;
+    }
+
     .form-group {
       margin-bottom: 1.5rem;
     }
@@ -100,6 +148,7 @@
     }
 
     input[type="text"],
+    select,
     textarea {
       width: 100%;
       padding: 0.75rem;
@@ -111,6 +160,7 @@
     }
 
     input[type="text"]:focus,
+    select:focus,
     textarea:focus {
       outline: none;
       border-color: var(--accent-red);
@@ -335,9 +385,26 @@
 
   <div class="container">
     <header>
-      <h1 class="title-admin">Cargar Nuevo Partido</h1>
+      <h1 class="title-admin" id="page-title">Cargar Nuevo Partido</h1>
       <span id="db-indicator" class="db-status">Detectando...</span>
     </header>
+
+    <!-- PESTAÑAS EDITORIALES -->
+    <div class="tabs-wrapper">
+      <button type="button" class="tab-btn active" id="tab-create" onclick="switchTab('create')">Crear Partido</button>
+      <button type="button" class="tab-btn" id="tab-edit" onclick="switchTab('edit')">Editar Partido Existente</button>
+    </div>
+
+    <!-- PANEL SELECTOR DE EDICIÓN -->
+    <div class="edit-selector-panel" id="edit-selector-container" style="display: none;">
+      <label for="edit-match-dropdown">Selecciona el Partido a Editar</label>
+      <div style="display: flex; gap: 1rem; margin-top: 0.5rem; flex-wrap: wrap;">
+        <select id="edit-match-dropdown">
+          <option value="">Cargando partidos disponibles...</option>
+        </select>
+        <button type="button" class="btn btn-red" id="load-edit-btn" onclick="loadMatchToEdit()">Cargar para Editar</button>
+      </div>
+    </div>
 
     <form id="match-form">
       <!-- DETALLES DEL PARTIDO -->
@@ -352,9 +419,9 @@
       </div>
 
       <div class="form-group">
-        <label>Foto Principal (Hero)</label>
+        <label id="hero-label">Foto Principal (Hero)</label>
         <div class="file-input-wrapper">
-          <span class="file-label">Haz clic o arrastra un archivo de imagen aquí</span>
+          <span class="file-label" id="hero-file-instructions">Haz clic o arrastra un archivo de imagen aquí</span>
           <input type="file" id="match-hero-file" accept="image/*" required onchange="previewImage(this, 'hero-preview')">
           <img id="hero-preview" class="file-preview" alt="Vista previa principal">
         </div>
@@ -372,9 +439,9 @@
 
       <!-- BOTONES DE ACCIÓN -->
       <div class="actions-bar">
-        <a href="index.html" class="btn">Volver a la portada</a>
+        <button type="button" class="btn" id="cancel-edit-btn" style="display: none;" onclick="switchTab('create')">Cancelar Edición</button>
         <button type="submit" class="btn btn-red" id="submit-btn">
-          <span>Crear Partido y Votación</span>
+          <span id="submit-btn-text">Crear Partido y Votación</span>
         </button>
       </div>
     </form>
@@ -383,12 +450,12 @@
   <!-- MODAL DE ÉXITO -->
   <div class="modal-overlay" id="success-modal">
     <div class="modal-content">
-      <h2 class="modal-title">¡Partido Creado con Éxito!</h2>
+      <h2 class="modal-title" id="modal-title-display">¡Partido Creado con Éxito!</h2>
       <p class="modal-text" style="margin-bottom: 1.5rem;">Se ha configurado la votación. Puedes compartir el enlace directo o copiar el código iframe responsive para embeberlo en tu sitio web:</p>
       
       <div style="margin-bottom: 1.5rem; text-align: left;">
         <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Enlace Directo</label>
-        <div class="url-box" id="generated-url" style="margin-bottom: 0.5rem;">http://...</div>
+        <div class="url-box" id="generated-url">http://...</div>
         <button type="button" class="btn" style="width: 100%; justify-content: center;" onclick="copyUrl()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.25rem;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
           Copiar Enlace Directo
@@ -418,6 +485,8 @@
   
   <script>
     let playerIndex = 0;
+    let editMode = false;
+    let editingMatchId = null;
 
     document.addEventListener("DOMContentLoaded", () => {
       // Indicar modo de base de datos
@@ -430,14 +499,163 @@
         indicator.classList.add("local");
       }
 
-      // Agregar los primeros dos jugadores por defecto
-      addPlayerRow();
-      addPlayerRow();
+      // Inicializar el formulario por defecto (Crear partido)
+      resetFormToCreate();
 
       // Enviar formulario
       const form = document.getElementById("match-form");
       form.addEventListener("submit", handleFormSubmit);
     });
+
+    // Cambiar de pestaña (Crear vs Editar)
+    async function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      
+      if (tab === 'create') {
+        document.getElementById('tab-create').classList.add('active');
+        document.getElementById('edit-selector-container').style.display = 'none';
+        document.getElementById('cancel-edit-btn').style.display = 'none';
+        resetFormToCreate();
+      } else if (tab === 'edit') {
+        document.getElementById('tab-edit').classList.add('active');
+        document.getElementById('edit-selector-container').style.display = 'block';
+        await populateMatchDropdown();
+      }
+    }
+
+    // Llenar el desplegable con los partidos existentes
+    async function populateMatchDropdown() {
+      const dropdown = document.getElementById('edit-match-dropdown');
+      dropdown.innerHTML = '<option value="">Cargando partidos...</option>';
+      
+      try {
+        const matches = await DB.getMatches();
+        dropdown.innerHTML = '';
+        
+        if (matches.length === 0) {
+          dropdown.innerHTML = '<option value="">No hay partidos guardados</option>';
+          return;
+        }
+
+        matches.forEach(m => {
+          const dateStr = new Date(m.created_at).toLocaleDateString('es-AR');
+          const option = document.createElement('option');
+          option.value = m.id;
+          option.innerText = `${m.title} (${dateStr})`;
+          dropdown.appendChild(option);
+        });
+      } catch (err) {
+        console.error(err);
+        dropdown.innerHTML = '<option value="">Error al cargar los partidos</option>';
+      }
+    }
+
+    // Cargar un partido en el formulario para editarlo
+    async function loadMatchToEdit() {
+      const matchId = document.getElementById('edit-match-dropdown').value;
+      if (!matchId) {
+        alert("Por favor, selecciona un partido de la lista.");
+        return;
+      }
+
+      const loadBtn = document.getElementById('load-edit-btn');
+      loadBtn.disabled = true;
+      loadBtn.innerText = "Cargando...";
+
+      try {
+        const match = await DB.getMatch(matchId);
+        const players = await DB.getPlayers(matchId);
+
+        // 1. Configurar estado de edición
+        editMode = true;
+        editingMatchId = match.id;
+
+        // 2. Actualizar textos de cabecera y botón
+        document.getElementById('page-title').innerText = "Editar Partido";
+        document.getElementById('submit-btn-text').innerText = "Actualizar Partido y Votación";
+        document.getElementById('cancel-edit-btn').style.display = 'inline-flex';
+
+        // 3. Pre-rellenar campos de partido
+        document.getElementById('match-title').value = match.title;
+        document.getElementById('match-summary').value = match.summary;
+
+        // Mostrar preview de foto hero y no requerirla obligatoriamente
+        const heroFile = document.getElementById('match-hero-file');
+        heroFile.required = false;
+        document.getElementById('hero-file-instructions').innerText = "Haz clic aquí para cambiar la imagen (o deja en blanco para mantener la actual)";
+        
+        const heroPreview = document.getElementById('hero-preview');
+        if (match.hero_image_url) {
+          heroPreview.src = match.hero_image_url;
+          heroPreview.style.display = 'block';
+          // Guardar URL actual en el wrapper para recuperarla si no se modifica
+          document.getElementById('match-hero-file').dataset.existingUrl = match.hero_image_url;
+        } else {
+          heroPreview.style.display = 'none';
+        }
+
+        // 4. Limpiar y rellenar listado de jugadores
+        const container = document.getElementById('players-list-container');
+        container.innerHTML = '';
+        playerIndex = 0;
+
+        players.forEach(p => {
+          addPlayerRow();
+          const card = document.getElementById(`player-card-${playerIndex}`);
+          
+          // Guardar metadatos en el elemento DOM de la tarjeta
+          card.dataset.playerId = p.id;
+          card.dataset.imageUrl = p.image_url;
+
+          // Rellenar campos de texto
+          card.querySelector('.player-number').value = p.number;
+          card.querySelector('.player-name').value = p.name;
+          card.querySelector('.player-position').value = p.position;
+          card.querySelector('.player-initial-avg').value = p.initial_avg;
+
+          // Mostrar foto y quitar requerimiento
+          const fileInput = card.querySelector('.player-file');
+          fileInput.required = false;
+
+          const previewImg = card.querySelector('.file-preview');
+          previewImg.src = p.image_url;
+          previewImg.style.display = 'block';
+        });
+
+      } catch (err) {
+        console.error(err);
+        alert("Ocurrió un error al cargar el partido:\n" + err.message);
+      } finally {
+        loadBtn.disabled = false;
+        loadBtn.innerText = "Cargar para Editar";
+      }
+    }
+
+    // Resetear el formulario al modo creación (en blanco)
+    function resetFormToCreate() {
+      editMode = false;
+      editingMatchId = null;
+
+      document.getElementById('page-title').innerText = "Cargar Nuevo Partido";
+      document.getElementById('submit-btn-text').innerText = "Crear Partido y Votación";
+      
+      const form = document.getElementById('match-form');
+      form.reset();
+
+      // Configurar hero file como requerido
+      const heroFile = document.getElementById('match-hero-file');
+      heroFile.required = true;
+      delete heroFile.dataset.existingUrl;
+      document.getElementById('hero-file-instructions').innerText = "Haz clic o arrastra un archivo de imagen aquí";
+      document.getElementById('hero-preview').style.display = 'none';
+
+      // Reconstruir jugadores a 2 filas vacías por defecto
+      const container = document.getElementById('players-list-container');
+      container.innerHTML = '';
+      playerIndex = 0;
+      addPlayerRow();
+      addPlayerRow();
+    }
 
     // Vista previa de carga de imágenes
     function previewImage(input, previewId) {
@@ -555,53 +773,81 @@
       try {
         const title = document.getElementById("match-title").value;
         const summary = document.getElementById("match-summary").value;
-        const heroFile = document.getElementById("match-hero-file").files[0];
+        const heroFileInput = document.getElementById("match-hero-file");
+        const heroFile = heroFileInput.files[0];
 
-        let matchHeroPayload = heroFile;
-        
-        // Si estamos en local fallback, debemos comprimir a Base64
-        if (!window.isSupabaseConfigured) {
-          matchHeroPayload = await compressImage(heroFile, 800, 500);
+        // 1. Guardar o actualizar datos del Partido
+        let matchId = editingMatchId;
+
+        if (!editMode) {
+          // MODO CREACIÓN
+          let matchHeroPayload = heroFile;
+          if (!window.isSupabaseConfigured) {
+            matchHeroPayload = await compressImage(heroFile, 800, 500);
+          }
+          matchId = await DB.createMatch(title, summary, matchHeroPayload);
+        } else {
+          // MODO EDICIÓN
+          let matchHeroPayload = null;
+          if (heroFile) {
+            if (window.isSupabaseConfigured) {
+              matchHeroPayload = heroFile;
+            } else {
+              matchHeroPayload = await compressImage(heroFile, 800, 500);
+            }
+          } else {
+            // Mantener la foto que ya teníamos
+            matchHeroPayload = heroFileInput.dataset.existingUrl || "";
+          }
+          await DB.updateMatch(matchId, title, summary, matchHeroPayload);
         }
 
-        // 1. Crear el partido
-        const matchId = await DB.createMatch(title, summary, matchHeroPayload);
-
-        // 2. Colectar datos de los jugadores agregados
+        // 2. Colectar datos de los jugadores agregados/editados en el formulario
         const playerCardElms = document.querySelectorAll(".player-entry-card");
         const playersList = [];
 
         for (const card of playerCardElms) {
+          const id = card.dataset.playerId || null; // Será string-ID si ya existía en la base de datos
           const number = parseInt(card.querySelector(".player-number").value, 10);
           const name = card.querySelector(".player-name").value;
           const position = card.querySelector(".player-position").value;
           const initialAvg = parseFloat(card.querySelector(".player-initial-avg").value) || 0.0;
+          
           const fileInput = card.querySelector(".player-file");
           const file = fileInput.files[0];
+          const existingImageUrl = card.dataset.imageUrl || "";
+
+          const playerPayload = {
+            id,
+            name,
+            number,
+            position,
+            initialAvg
+          };
 
           if (window.isSupabaseConfigured) {
-            playersList.push({
-              name,
-              number,
-              position,
-              imageFile: file, // Objeto File real para Supabase
-              initialAvg
-            });
+            if (file) {
+              playerPayload.imageFile = file;
+            } else {
+              playerPayload.imageUrl = existingImageUrl;
+            }
           } else {
-            // Comprimir imagen a base64 para guardarla en localStorage
-            const base64Img = await compressImage(file, 200, 200);
-            playersList.push({
-              name,
-              number,
-              position,
-              imageUrl: base64Img, // String base64
-              initialAvg
-            });
+            // Local Mock
+            if (file) {
+              playerPayload.imageUrl = await compressImage(file, 200, 200);
+            } else {
+              playerPayload.imageUrl = existingImageUrl;
+            }
           }
+          playersList.push(playerPayload);
         }
 
-        // 3. Insertar los jugadores
-        await DB.addPlayers(matchId, playersList);
+        // 3. Sincronizar jugadores (crear nuevos, editar existentes y borrar removidos)
+        if (!editMode) {
+          await DB.addPlayers(matchId, playersList);
+        } else {
+          await DB.syncPlayers(matchId, playersList);
+        }
 
         // 4. Mostrar modal de éxito con la URL pública generada e Iframe
         const currentUrl = window.location.origin + window.location.pathname;
@@ -614,6 +860,9 @@
         document.getElementById("generated-iframe").value = iframeCode;
         
         document.getElementById("open-link").href = targetUrl;
+        
+        // Ajustar el modal de éxito según el modo
+        document.getElementById("modal-title-display").innerText = editMode ? "¡Partido Actualizado con Éxito!" : "¡Partido Creado con Éxito!";
         
         const modal = document.getElementById("success-modal");
         modal.classList.add("active");
@@ -654,6 +903,10 @@
     // Cerrar modal
     function closeModal() {
       document.getElementById("success-modal").classList.remove("active");
+      // Si estábamos en edición, al cerrar volvemos a la pestaña de creación para refrescar
+      if (editMode) {
+        switchTab('create');
+      }
     }
   </script>
 </body>

@@ -54,7 +54,21 @@ function getOrCreateUserUUID() {
 // MÉTODOS DE LA BASE DE DATOS
 // ==========================================
 const DB = {
-  // 1. Obtener un partido por ID
+  // 1. Obtener todos los partidos (para el listado de edición)
+  async getMatches() {
+    if (window.supabaseClient) {
+      const { data, error } = await window.supabaseClient
+        .from('matches')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    } else {
+      return JSON.parse(localStorage.getItem('mock_matches')) || [];
+    }
+  },
+
+  // 2. Obtener un partido por ID
   async getMatch(matchId) {
     if (window.supabaseClient) {
       const { data, error } = await window.supabaseClient
@@ -72,7 +86,7 @@ const DB = {
     }
   },
 
-  // 2. Obtener jugadores de un partido
+  // 3. Obtener jugadores de un partido
   async getPlayers(matchId) {
     if (window.supabaseClient) {
       const { data, error } = await window.supabaseClient
@@ -90,7 +104,7 @@ const DB = {
     }
   },
 
-  // 3. Obtener estadísticas de votación (promedio y total votos)
+  // 4. Obtener estadísticas de votación (promedio y total votos)
   async getPlayerStats(matchId) {
     if (window.supabaseClient) {
       const { data, error } = await window.supabaseClient
@@ -134,7 +148,7 @@ const DB = {
     }
   },
 
-  // 4. Enviar un voto
+  // 5. Enviar un voto
   async submitVote(playerId, rating) {
     const userUuid = getOrCreateUserUUID();
     if (window.supabaseClient) {
@@ -166,7 +180,7 @@ const DB = {
     }
   },
 
-  // 5. Crear un partido (Usado por admin.html)
+  // 6. Crear un partido (Usado por admin.html)
   async createMatch(title, summary, heroImageFileOrBase64) {
     let heroImageUrl = "";
     
@@ -213,7 +227,52 @@ const DB = {
     }
   },
 
-  // 6. Cargar jugadores en lote (Usado por admin.html)
+  // 7. Actualizar un partido existente (Usado por admin.html en modo edición)
+  async updateMatch(matchId, title, summary, heroImageFileOrBase64) {
+    let heroImageUrl = null;
+    
+    if (window.supabaseClient) {
+      const updateData = { title, summary };
+      
+      if (heroImageFileOrBase64) {
+        if (heroImageFileOrBase64 instanceof File) {
+          const fileName = `${Date.now()}_hero_${heroImageFileOrBase64.name.replace(/\s+/g, '_')}`;
+          const { error: uploadError } = await window.supabaseClient.storage
+            .from('match-images')
+            .upload(fileName, heroImageFileOrBase64);
+          
+          if (uploadError) throw uploadError;
+          
+          const { data } = window.supabaseClient.storage.from('match-images').getPublicUrl(fileName);
+          heroImageUrl = data.publicUrl;
+          updateData.hero_image_url = heroImageUrl;
+        } else {
+          heroImageUrl = heroImageFileOrBase64;
+          updateData.hero_image_url = heroImageUrl;
+        }
+      }
+
+      const { error } = await window.supabaseClient
+        .from('matches')
+        .update(updateData)
+        .eq('id', matchId);
+      
+      if (error) throw error;
+    } else {
+      const matches = JSON.parse(localStorage.getItem('mock_matches'));
+      const matchIdx = matches.findIndex(m => m.id === matchId);
+      if (matchIdx > -1) {
+        matches[matchIdx].title = title;
+        matches[matchIdx].summary = summary;
+        if (heroImageFileOrBase64) {
+          matches[matchIdx].hero_image_url = heroImageFileOrBase64;
+        }
+        localStorage.setItem('mock_matches', JSON.stringify(matches));
+      }
+    }
+  },
+
+  // 8. Cargar jugadores en lote
   async addPlayers(matchId, playersList) {
     if (window.supabaseClient) {
       const formattedPlayers = [];
@@ -232,7 +291,7 @@ const DB = {
           const { data } = window.supabaseClient.storage.from('match-images').getPublicUrl(fileName);
           playerImageUrl = data.publicUrl;
         } else {
-          playerImageUrl = p.imageUrl;
+          playerImageUrl = p.imageUrl || p.image_url;
         }
 
         formattedPlayers.push({
@@ -241,7 +300,7 @@ const DB = {
           number: p.number,
           position: p.position,
           image_url: playerImageUrl,
-          initial_avg: p.initialAvg
+          initial_avg: p.initialAvg || p.initial_avg
         });
       }
 
@@ -260,8 +319,8 @@ const DB = {
           name: p.name,
           number: p.number,
           position: p.position,
-          image_url: p.imageUrl, // Contiene string Base64 o URL mock
-          initial_avg: p.initialAvg
+          image_url: p.imageUrl || p.image_url, // Contiene string Base64 o URL mock
+          initial_avg: p.initialAvg || p.initial_avg
         });
       });
       
@@ -269,7 +328,111 @@ const DB = {
     }
   },
 
-  // 7. Obtener votos del usuario actual para un partido
+  // 9. Sincronizar jugadores de un partido (soporta adición, edición y eliminación de jugadores)
+  async syncPlayers(matchId, playersList) {
+    if (window.supabaseClient) {
+      // 1. Traer los jugadores existentes en la base de datos
+      const existingPlayers = await this.getPlayers(matchId);
+      const existingIds = existingPlayers.map(p => p.id);
+      
+      // 2. Identificar cuáles fueron eliminados (están en BD pero no vienen en el nuevo playersList)
+      const incomingIds = playersList.filter(p => p.id).map(p => p.id);
+      const deletedIds = existingIds.filter(id => !incomingIds.includes(id));
+      
+      if (deletedIds.length > 0) {
+        const { error: deleteError } = await window.supabaseClient
+          .from('players')
+          .delete()
+          .in('id', deletedIds);
+        if (deleteError) throw deleteError;
+      }
+      
+      // 3. Procesar altas y modificaciones
+      for (const p of playersList) {
+        let playerImageUrl = p.image_url || "";
+        
+        // Si subió un nuevo archivo
+        if (p.imageFile instanceof File) {
+          const fileName = `${Date.now()}_player_${p.imageFile.name.replace(/\s+/g, '_')}`;
+          const { error: uploadError } = await window.supabaseClient.storage
+            .from('match-images')
+            .upload(fileName, p.imageFile);
+          if (uploadError) throw uploadError;
+          
+          const { data } = window.supabaseClient.storage.from('match-images').getPublicUrl(fileName);
+          playerImageUrl = data.publicUrl;
+        }
+
+        const playerData = {
+          match_id: matchId,
+          name: p.name,
+          number: p.number,
+          position: p.position,
+          initial_avg: p.initialAvg || p.initial_avg || 0.0
+        };
+        if (playerImageUrl !== "") {
+          playerData.image_url = playerImageUrl;
+        }
+
+        if (p.id) {
+          // Actualización
+          const { error: updateError } = await window.supabaseClient
+            .from('players')
+            .update(playerData)
+            .eq('id', p.id);
+          if (updateError) throw updateError;
+        } else {
+          // Creación de nuevo jugador agregado en la edición
+          if (playerImageUrl === "") {
+            playerData.image_url = "https://via.placeholder.com/150"; // Fallback si es nuevo y no tiene foto
+          }
+          const { error: insertError } = await window.supabaseClient
+            .from('players')
+            .insert(playerData);
+          if (insertError) throw insertError;
+        }
+      }
+    } else {
+      // Modo Local Fallback
+      let allPlayers = JSON.parse(localStorage.getItem('mock_players')) || [];
+      
+      // Eliminar jugadores que pertenecen a este partido pero ya no vienen en la lista
+      const incomingIds = playersList.filter(p => p.id).map(p => p.id);
+      allPlayers = allPlayers.filter(p => p.match_id !== matchId || incomingIds.includes(p.id));
+      
+      // Procesar cada jugador entrante
+      playersList.forEach(p => {
+        if (p.id) {
+          // Actualizar jugador existente
+          const idx = allPlayers.findIndex(x => x.id === p.id);
+          if (idx > -1) {
+            allPlayers[idx].name = p.name;
+            allPlayers[idx].number = p.number;
+            allPlayers[idx].position = p.position;
+            allPlayers[idx].initial_avg = p.initialAvg || p.initial_avg;
+            if (p.imageUrl || p.image_url) {
+              allPlayers[idx].image_url = p.imageUrl || p.image_url;
+            }
+          }
+        } else {
+          // Insertar nuevo jugador
+          allPlayers.push({
+            id: generateUUID(),
+            match_id: matchId,
+            name: p.name,
+            number: p.number,
+            position: p.position,
+            image_url: p.imageUrl || p.image_url || "https://via.placeholder.com/150",
+            initial_avg: p.initialAvg || p.initial_avg || 0.0
+          });
+        }
+      });
+      
+      localStorage.setItem('mock_players', JSON.stringify(allPlayers));
+    }
+  },
+
+  // 10. Obtener votos del usuario actual para un partido
   async getUserVotes(matchId) {
     const userUuid = getOrCreateUserUUID();
     const votesObj = {};
