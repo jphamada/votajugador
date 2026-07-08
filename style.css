@@ -253,9 +253,9 @@ header {
 }
 
 .player-avatar-container {
-  width: 75px;
-  height: 75px;
-  border-radius: 50%;
+  width: 85px;
+  height: 85px;
+  border-radius: 0%;
   overflow: hidden;
   flex-shrink: 0;
   background-color: #f7fafc;
