@@ -610,7 +610,17 @@
 
           // Rellenar campos de texto
           card.querySelector('.player-name').value = p.name;
-          card.querySelector('.player-position').value = p.position;
+          
+          // Mapear posición anterior al selector desplegable
+          let positionValue = "Delantero"; // valor por defecto
+          if (p.position) {
+            if (p.position.includes("Delantero")) positionValue = "Delantero";
+            else if (p.position.includes("Defen") || p.position.includes("Defensor")) positionValue = "Defensor";
+            else if (p.position.includes("Medio") || p.position.includes("Mediocampista")) positionValue = "Mediocampista";
+            else if (p.position.includes("Arquero")) positionValue = "Arquero";
+          }
+          card.querySelector('.player-position').value = positionValue;
+          
           card.querySelector('.player-initial-avg').value = p.initial_avg;
 
           // Mostrar foto y quitar requerimiento
@@ -690,7 +700,12 @@
           </div>
           <div class="form-group">
             <label>Posición</label>
-            <input type="text" class="player-position" placeholder="Delantero / Capitán" required>
+            <select class="player-position" required>
+              <option value="Arquero">Arquero</option>
+              <option value="Defensor">Defensor</option>
+              <option value="Mediocampista">Mediocampista</option>
+              <option value="Delantero">Delantero</option>
+            </select>
           </div>
         </div>
 

@@ -311,10 +311,10 @@
             <div class="comparison-section">
               <div class="bar-container">
                 <div class="bar-header">
-                  <span>Tu calif: <strong id="val-user-${player.id}">${userVote || '-'}</strong></span>
+                  <span>Tu calif: <strong id="val-user-${player.id}">${userVote !== undefined ? userVote : (tempVotes[player.id] !== undefined ? tempVotes[player.id] : '-')}</strong></span>
                 </div>
                 <div class="bar-bg">
-                  <div class="bar-fill user-voted" id="bar-user-${player.id}" style="width: ${hasVoted ? userVote * 10 : 0}%"></div>
+                  <div class="bar-fill user-voted" id="bar-user-${player.id}" style="width: ${(userVote !== undefined ? userVote : (tempVotes[player.id] !== undefined ? tempVotes[player.id] : 0)) * 10}%"></div>
                 </div>
               </div>
               <div class="bar-container">
@@ -322,7 +322,7 @@
                   <span>Promedio de la comunidad: <strong id="val-comm-${player.id}">${calculatedAvg}</strong></span>
                 </div>
                 <div class="bar-bg">
-                  <div class="bar-fill community-avg" id="bar-comm-${player.id}" style="width: ${hasVoted ? calculatedAvg * 10 : 0}%"></div>
+                  <div class="bar-fill community-avg" id="bar-comm-${player.id}" style="width: ${calculatedAvg * 10}%"></div>
                 </div>
               </div>
             </div>
@@ -338,6 +338,8 @@
 
       // Actualizar visualmente la fila del jugador
       const row = document.getElementById(`row-${playerId}`);
+      
+      // 1. Actualizar botones
       const buttons = row.querySelectorAll('.score-btn');
       buttons.forEach((btn, index) => {
         if (index + 1 === voteValue) {
@@ -347,7 +349,11 @@
         }
       });
 
-      // Actualizar contadores globales y habilitar el botón de enviar
+      // 2. Actualizar barra y etiqueta en tiempo real
+      document.getElementById(`val-user-${playerId}`).innerText = voteValue;
+      document.getElementById(`bar-user-${playerId}`).style.width = `${voteValue * 10}%`;
+
+      // 3. Actualizar contadores globales y habilitar el botón de enviar
       updateGlobalStatus();
     };
 
