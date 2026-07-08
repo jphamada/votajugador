@@ -93,6 +93,9 @@
 
     // INICIALIZACIÓN
     document.addEventListener("DOMContentLoaded", async () => {
+      // Inicializar conexión con base de datos (Vercel o config.js)
+      await DB.initialize();
+
       const urlParams = new URLSearchParams(window.location.search);
       currentMatchId = urlParams.get('match');
 

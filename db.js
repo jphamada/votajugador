@@ -1,61 +1,57 @@
 // CAPA DE DATOS UNIFICADA (SUPABASE Y LOCAL FALLBACK)
 
 window.supabaseClient = null;
-window.isSupabaseConfigured = typeof SUPABASE_URL === 'string' && SUPABASE_URL !== "" && typeof SUPABASE_ANON_KEY === 'string' && SUPABASE_ANON_KEY !== "";
+window.isSupabaseConfigured = false;
+let isInitialized = false;
 
-if (window.isSupabaseConfigured) {
-  try {
-    // Inicializar cliente de Supabase (usando el objeto global del CDN)
-    window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    console.log("Supabase inicializado correctamente.");
-  } catch (e) {
-    console.error("Error al inicializar Supabase, activando fallback local:", e);
-    window.supabaseClient = null;
-  }
-} else {
-  console.log("Credenciales de Supabase no configuradas. Corriendo en modo 'Local Fallback' (localStorage).");
-}
-
-// ==========================================
-// INICIALIZACIÓN DE MOCK LOCALSTORAGE
-// ==========================================
-function initMockDB() {
-  if (!localStorage.getItem('mock_matches')) {
-    localStorage.setItem('mock_matches', JSON.stringify([]));
-  }
-  if (!localStorage.getItem('mock_players')) {
-    localStorage.setItem('mock_players', JSON.stringify([]));
-  }
-  if (!localStorage.getItem('mock_votes')) {
-    localStorage.setItem('mock_votes', JSON.stringify([]));
-  }
-}
-initMockDB();
-
-// Generador de UUID para simulación local
-function generateUUID() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-}
-
-// Obtener o crear UUID de usuario para limitar votación única
-function getOrCreateUserUUID() {
-  let uuid = localStorage.getItem('voter_user_uuid');
-  if (!uuid) {
-    uuid = generateUUID();
-    localStorage.setItem('voter_user_uuid', uuid);
-  }
-  return uuid;
-}
-
-// ==========================================
-// MÉTODOS DE LA BASE DE DATOS
-// ==========================================
 const DB = {
+  // Inicialización dinámica y asíncrona de credenciales (Vercel vs Local)
+  async initialize() {
+    if (isInitialized) return;
+    
+    let url = "";
+    let key = "";
+
+    // 1. Intentar obtener credenciales de las variables de entorno de Vercel a través de la API Serverless
+    try {
+      const res = await fetch('/api/config');
+      if (res.ok) {
+        const config = await res.json();
+        url = config.SUPABASE_URL || "";
+        key = config.SUPABASE_ANON_KEY || "";
+      }
+    } catch (e) {
+      // En local double-click, fallará el fetch, lo cual es normal
+      console.log("No se pudo contactar con /api/config. Usando config.js local.");
+    }
+
+    // 2. Si no se obtuvieron de la API de Vercel, usar las variables locales de config.js
+    if (!url && typeof SUPABASE_URL !== 'undefined') url = SUPABASE_URL;
+    if (!key && typeof SUPABASE_ANON_KEY !== 'undefined') key = SUPABASE_ANON_KEY;
+
+    window.isSupabaseConfigured = url !== "" && key !== "";
+
+    if (window.isSupabaseConfigured) {
+      try {
+        // Inicializar cliente de Supabase (usando el objeto global del CDN)
+        window.supabaseClient = window.supabase.createClient(url, key);
+        console.log("Supabase inicializado correctamente.");
+      } catch (e) {
+        console.error("Error al inicializar Supabase, activando fallback local:", e);
+        window.supabaseClient = null;
+      }
+    } else {
+      console.log("Credenciales de Supabase no configuradas. Corriendo en modo 'Local Fallback' (localStorage).");
+    }
+    
+    // Inicializar mock
+    initMockDB();
+    isInitialized = true;
+  },
+
   // 1. Obtener todos los partidos (para el listado de edición)
   async getMatches() {
+    await this.initialize();
     if (window.supabaseClient) {
       const { data, error } = await window.supabaseClient
         .from('matches')
@@ -70,6 +66,7 @@ const DB = {
 
   // 2. Obtener un partido por ID
   async getMatch(matchId) {
+    await this.initialize();
     if (window.supabaseClient) {
       const { data, error } = await window.supabaseClient
         .from('matches')
@@ -88,6 +85,7 @@ const DB = {
 
   // 3. Obtener jugadores de un partido
   async getPlayers(matchId) {
+    await this.initialize();
     if (window.supabaseClient) {
       const { data, error } = await window.supabaseClient
         .from('players')
@@ -106,6 +104,7 @@ const DB = {
 
   // 4. Obtener estadísticas de votación (promedio y total votos)
   async getPlayerStats(matchId) {
+    await this.initialize();
     if (window.supabaseClient) {
       const { data, error } = await window.supabaseClient
         .from('player_stats')
@@ -150,6 +149,7 @@ const DB = {
 
   // 5. Enviar un voto
   async submitVote(playerId, rating) {
+    await this.initialize();
     const userUuid = getOrCreateUserUUID();
     if (window.supabaseClient) {
       const { error } = await window.supabaseClient
@@ -182,6 +182,7 @@ const DB = {
 
   // 6. Crear un partido (Usado por admin.html)
   async createMatch(title, summary, heroImageFileOrBase64) {
+    await this.initialize();
     let heroImageUrl = "";
     
     if (window.supabaseClient) {
@@ -229,6 +230,7 @@ const DB = {
 
   // 7. Actualizar un partido existente (Usado por admin.html en modo edición)
   async updateMatch(matchId, title, summary, heroImageFileOrBase64) {
+    await this.initialize();
     let heroImageUrl = null;
     
     if (window.supabaseClient) {
@@ -274,6 +276,7 @@ const DB = {
 
   // 8. Cargar jugadores en lote
   async addPlayers(matchId, playersList) {
+    await this.initialize();
     if (window.supabaseClient) {
       const formattedPlayers = [];
       
@@ -329,6 +332,7 @@ const DB = {
 
   // 9. Sincronizar jugadores de un partido (soporta adición, edición y eliminación de jugadores)
   async syncPlayers(matchId, playersList) {
+    await this.initialize();
     if (window.supabaseClient) {
       // 1. Traer los jugadores existentes en la base de datos
       const existingPlayers = await this.getPlayers(matchId);
@@ -431,6 +435,7 @@ const DB = {
 
   // 10. Duplicar un partido completo con todos sus jugadores
   async duplicateMatch(matchId) {
+    await this.initialize();
     // 1. Obtener datos del partido original
     const match = await this.getMatch(matchId);
     
@@ -454,6 +459,7 @@ const DB = {
 
   // 11. Obtener votos del usuario actual para un partido
   async getUserVotes(matchId) {
+    await this.initialize();
     const userUuid = getOrCreateUserUUID();
     const votesObj = {};
 
@@ -490,3 +496,18 @@ const DB = {
     return votesObj;
   }
 };
+
+// ==========================================
+// AUXILIAR DE INICIALIZACIÓN MOCK LOCAL
+// ==========================================
+function initMockDB() {
+  if (!localStorage.getItem('mock_matches')) {
+    localStorage.setItem('mock_matches', JSON.stringify([]));
+  }
+  if (!localStorage.getItem('mock_players')) {
+    localStorage.setItem('mock_players', JSON.stringify([]));
+  }
+  if (!localStorage.getItem('mock_votes')) {
+    localStorage.setItem('mock_votes', JSON.stringify([]));
+  }
+}

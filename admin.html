@@ -489,7 +489,10 @@
     let editMode = false;
     let editingMatchId = null;
 
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
+      // Inicializar conexión con base de datos (Vercel o config.js)
+      await DB.initialize();
+
       // Indicar modo de base de datos
       const indicator = document.getElementById("db-indicator");
       if (window.isSupabaseConfigured) {
