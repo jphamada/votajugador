@@ -302,7 +302,8 @@ const DB = {
           name: p.name,
           position: p.position,
           image_url: playerImageUrl,
-          initial_avg: p.initialAvg || p.initial_avg
+          initial_avg: p.initialAvg || p.initial_avg,
+          number: p.number !== null && p.number !== undefined ? parseInt(p.number) || 0 : 0
         });
       }
 
@@ -322,6 +323,7 @@ const DB = {
           position: p.position,
           image_url: p.imageUrl || p.image_url, // Contiene string Base64 o URL mock
           initial_avg: p.initialAvg || p.initial_avg,
+          number: parseInt(p.number) || 0,
           created_at: new Date().toISOString()
         });
       });
@@ -370,7 +372,8 @@ const DB = {
           match_id: matchId,
           name: p.name,
           position: p.position,
-          initial_avg: p.initialAvg || p.initial_avg || 0.0
+          initial_avg: p.initialAvg || p.initial_avg || 0.0,
+          number: p.number !== null && p.number !== undefined ? parseInt(p.number) || 0 : 0
         };
         if (playerImageUrl !== "") {
           playerData.image_url = playerImageUrl;
@@ -411,6 +414,7 @@ const DB = {
             allPlayers[idx].name = p.name;
             allPlayers[idx].position = p.position;
             allPlayers[idx].initial_avg = p.initialAvg || p.initial_avg;
+            allPlayers[idx].number = parseInt(p.number) || 0;
             if (p.imageUrl || p.image_url) {
               allPlayers[idx].image_url = p.imageUrl || p.image_url;
             }
@@ -424,6 +428,7 @@ const DB = {
             position: p.position,
             image_url: p.imageUrl || p.image_url || "https://via.placeholder.com/150",
             initial_avg: p.initialAvg || p.initial_avg || 0.0,
+            number: parseInt(p.number) || 0,
             created_at: new Date().toISOString()
           });
         }
@@ -450,7 +455,8 @@ const DB = {
       name: p.name,
       position: p.position,
       imageUrl: p.image_url,
-      initialAvg: p.initial_avg
+      initialAvg: p.initial_avg,
+      number: p.number !== null && p.number !== undefined ? p.number : 0
     }));
     
     await this.addPlayers(newMatchId, playersCopy);

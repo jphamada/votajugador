@@ -16,7 +16,7 @@
   <!-- Supabase y Capa de Datos -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="db.js"></script>
+  <script src="db.js?v=2"></script>
 
   <link rel="stylesheet" href="style.css">
 </head>
@@ -291,7 +291,7 @@
               <img class="player-avatar" src="${player.image_url}" alt="Foto de ${player.name}" onerror="this.src='https://via.placeholder.com/150'">
             </div>
             <div class="player-meta">
-              <span class="player-number-role">${player.position}</span>
+              <span class="player-number-role">${player.number ? `N° ${player.number} - ` : ''}${player.position}</span>
               <div class="player-name-container">
                 <h2 class="player-name">${player.name}</h2>
                 <span class="player-voted-dot" id="voted-dot-${player.id}">Votado</span>

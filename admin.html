@@ -244,7 +244,7 @@
 
     .player-row-fields {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 2fr 80px 2fr;
       gap: 1rem;
       margin-bottom: 1rem;
     }
@@ -502,7 +502,7 @@
   <!-- Cargar clientes y lógica -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="db.js"></script>
+  <script src="db.js?v=2"></script>
   
   <script>
     let playerIndex = 0;
@@ -694,6 +694,7 @@
 
           // Rellenar campos de texto
           card.querySelector('.player-name').value = p.name;
+          card.querySelector('.player-number').value = p.number !== undefined && p.number !== null ? p.number : '';
           
           // Mapear posición anterior al selector desplegable
           let positionValue = "Delantero"; // valor por defecto
@@ -781,6 +782,10 @@
           <div class="form-group">
             <label>Nombre Completo</label>
             <input type="text" class="player-name" placeholder="Lionel Messi" required>
+          </div>
+          <div class="form-group">
+            <label>Dorsal</label>
+            <input type="number" class="player-number" placeholder="10" min="1" max="99" required>
           </div>
           <div class="form-group">
             <label>Posición</label>
@@ -904,6 +909,7 @@
         for (const card of playerCardElms) {
           const id = card.dataset.playerId || null; // Será string-ID si ya existía en la base de datos
           const name = card.querySelector(".player-name").value;
+          const number = parseInt(card.querySelector(".player-number").value) || 0;
           const position = card.querySelector(".player-position").value;
           const initialAvg = parseFloat(card.querySelector(".player-initial-avg").value) || 0.0;
           
@@ -914,6 +920,7 @@
           const playerPayload = {
             id,
             name,
+            number,
             position,
             initialAvg
           };

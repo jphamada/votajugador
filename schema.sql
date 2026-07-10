@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS players (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   match_id UUID REFERENCES matches(id) ON DELETE CASCADE NOT NULL,
   name TEXT NOT NULL,
+  number INTEGER NOT NULL,
   position TEXT NOT NULL,
   image_url TEXT NOT NULL,
   initial_avg NUMERIC(3, 1) DEFAULT 0.0,
