@@ -83,22 +83,49 @@ const DB = {
     }
   },
 
-  // 3. Obtener jugadores de un partido
+  // 3. Obtener jugadores de un partido (ordenados por posición y dorsal)
   async getPlayers(matchId) {
     await this.initialize();
+    
+    const getPositionWeight = (pos) => {
+      if (!pos) return 99;
+      const p = pos.toLowerCase();
+      if (p.includes('arquero')) return 1;
+      if (p.includes('defen')) return 2;
+      if (p.includes('medio') || p.includes('volante')) return 3;
+      if (p.includes('delantero')) return 4;
+      return 5;
+    };
+
+    const sortPlayers = (list) => {
+      return list.sort((a, b) => {
+        const weightA = getPositionWeight(a.position);
+        const weightB = getPositionWeight(b.position);
+        if (weightA !== weightB) {
+          return weightA - weightB;
+        }
+        // Si tienen la misma posición, ordenar por dorsal (number) de menor a mayor
+        const numA = a.number !== null && a.number !== undefined ? parseInt(a.number) || 0 : 0;
+        const numB = b.number !== null && b.number !== undefined ? parseInt(b.number) || 0 : 0;
+        if (numA !== numB) {
+          return numA - numB;
+        }
+        // Si no hay dorsal, mantener orden de creación
+        return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+      });
+    };
+
     if (window.supabaseClient) {
       const { data, error } = await window.supabaseClient
         .from('players')
         .select('*')
-        .eq('match_id', matchId)
-        .order('created_at', { ascending: true });
+        .eq('match_id', matchId);
       if (error) throw error;
-      return data;
+      return sortPlayers(data);
     } else {
-      const players = JSON.parse(localStorage.getItem('mock_players'));
-      return players
-        .filter(p => p.match_id === matchId)
-        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      const players = JSON.parse(localStorage.getItem('mock_players')) || [];
+      const filtered = players.filter(p => p.match_id === matchId);
+      return sortPlayers(filtered);
     }
   },
 
