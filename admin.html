@@ -956,8 +956,8 @@
         
         document.getElementById("generated-url").innerText = targetUrl;
         
-        // Iframe responsive code
-        const iframeCode = `<div style="position: relative; padding-bottom: 110%; height: 0; overflow: hidden; max-width: 100%; border: 1px solid #e2e8f0; border-radius: 8px;">\n  <iframe src="${targetUrl}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allowtransparency="true"></iframe>\n</div>`;
+        // Iframe code (simple)
+        const iframeCode = `<iframe src="${targetUrl}" width="100%" height="2500px" style="border: 0;"></iframe>`;
         document.getElementById("generated-iframe").value = iframeCode;
         
         document.getElementById("open-link").href = targetUrl;
