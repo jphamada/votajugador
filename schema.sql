@@ -65,10 +65,14 @@ ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
 -- Políticas para Matches (Público puede leer e insertar para el demo)
 CREATE POLICY "Permitir lectura pública de partidos" ON matches FOR SELECT USING (true);
 CREATE POLICY "Permitir creación pública de partidos" ON matches FOR INSERT WITH CHECK (true);
+CREATE POLICY "Permitir actualización pública de partidos" ON matches FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "Permitir eliminación pública de partidos" ON matches FOR DELETE USING (true);
 
 -- Políticas para Players (Público puede leer e insertar para el demo)
 CREATE POLICY "Permitir lectura pública de jugadores" ON players FOR SELECT USING (true);
 CREATE POLICY "Permitir creación pública de jugadores" ON players FOR INSERT WITH CHECK (true);
+CREATE POLICY "Permitir actualización pública de jugadores" ON players FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "Permitir eliminación pública de jugadores" ON players FOR DELETE USING (true);
 
 -- Políticas para Votes (Público puede leer, insertar, actualizar y eliminar votos)
 CREATE POLICY "Permitir lectura pública de votos" ON votes FOR SELECT USING (true);

@@ -354,7 +354,7 @@ const DB = {
       
       // 3. Procesar altas y modificaciones
       for (const p of playersList) {
-        let playerImageUrl = p.image_url || "";
+        let playerImageUrl = p.imageUrl || p.image_url || "";
         
         // Si subió un nuevo archivo
         if (p.imageFile instanceof File) {
