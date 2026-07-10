@@ -424,6 +424,7 @@
         </select>
         <button type="button" class="btn btn-red" id="load-edit-btn" onclick="loadMatchToEdit()">Cargar para Editar</button>
         <button type="button" class="btn" id="duplicate-match-btn" onclick="duplicateMatch()">Duplicar Partido</button>
+        <button type="button" class="btn" id="delete-match-btn" onclick="deleteMatch()" style="background-color: var(--accent-red); color: white; border-color: var(--accent-red);">Eliminar Partido</button>
       </div>
     </div>
 
@@ -1038,6 +1039,47 @@
       } finally {
         dupBtn.disabled = false;
         dupBtn.innerText = originalText;
+      }
+    }
+
+    // Eliminar un partido completo
+    async function deleteMatch() {
+      const matchId = document.getElementById('edit-match-dropdown').value;
+      if (!matchId) {
+        alert("Por favor, selecciona un partido de la lista.");
+        return;
+      }
+
+      const dropdown = document.getElementById('edit-match-dropdown');
+      const selectedOptionText = dropdown.options[dropdown.selectedIndex].text;
+
+      const confirmDelete = confirm(`¿Estás seguro de que deseas eliminar el partido "${selectedOptionText}"?\nEsta acción no se puede deshacer y borrará permanentemente todos sus jugadores y votos asociados.`);
+      if (!confirmDelete) {
+        return;
+      }
+
+      const delBtn = document.getElementById('delete-match-btn');
+      delBtn.disabled = true;
+      const originalText = delBtn.innerText;
+      delBtn.innerText = "Eliminando...";
+
+      try {
+        await DB.deleteMatch(matchId);
+        alert("¡Partido eliminado con éxito!");
+        
+        // Si el partido eliminado era el que se estaba editando, resetear el formulario
+        if (editMode && editingMatchId === matchId) {
+          resetFormToCreate();
+        }
+
+        // Actualizar dropdown
+        await populateMatchDropdown();
+      } catch (err) {
+        console.error(err);
+        alert("Ocurrió un error al eliminar el partido:\n" + err.message);
+      } finally {
+        delBtn.disabled = false;
+        delBtn.innerText = originalText;
       }
     }
   </script>

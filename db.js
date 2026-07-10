@@ -490,6 +490,33 @@ const DB = {
     return newMatchId;
   },
 
+  // 10.5. Eliminar un partido completo
+  async deleteMatch(matchId) {
+    await this.initialize();
+    if (window.supabaseClient) {
+      const { error } = await window.supabaseClient
+        .from('matches')
+        .delete()
+        .eq('id', matchId);
+      if (error) throw error;
+    } else {
+      // Local Fallback
+      let matches = JSON.parse(localStorage.getItem('mock_matches')) || [];
+      matches = matches.filter(m => m.id !== matchId);
+      localStorage.setItem('mock_matches', JSON.stringify(matches));
+
+      let players = JSON.parse(localStorage.getItem('mock_players')) || [];
+      const matchPlayerIds = players.filter(p => p.match_id === matchId).map(p => p.id);
+      
+      players = players.filter(p => p.match_id !== matchId);
+      localStorage.setItem('mock_players', JSON.stringify(players));
+
+      let votes = JSON.parse(localStorage.getItem('mock_votes')) || [];
+      votes = votes.filter(v => !matchPlayerIds.includes(v.player_id));
+      localStorage.setItem('mock_votes', JSON.stringify(votes));
+    }
+  },
+
   // 11. Obtener votos del usuario actual para un partido
   async getUserVotes(matchId) {
     await this.initialize();
